@@ -399,7 +399,7 @@
         <div id="sidebarUser">Connecté: <strong>admin</strong></div>
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()">↩ Se déconnecter</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          APD-MINAT • Version 6.5<br>
+          APD-MINAT • Version 6.6<br>
           <span style="opacity:0.7">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -1414,6 +1414,57 @@ function applyInitialPublishedData(data){
   }
   // NE PAS activer _publishedDataMode — l'admin doit pouvoir sauvegarder
   return true;
+}
+
+// 🌐 V6.6 : Force le chargement des données publiées depuis le serveur.
+// Utilisé par le bouton "Charger les données du serveur" dans les Paramètres.
+// Permet aux admins de récupérer les données publiées même si leur navigateur
+// contient déjà des données locales (de démo ou anciennes).
+async function forceLoadPublishedData(){
+  if(!isAdmin()){
+    toast('Action refusée', 'Seuls les administrateurs peuvent charger les données du serveur.', 'error');
+    return;
+  }
+  showLoadingIndicator('Chargement des données depuis le serveur…');
+  try {
+    const published = await tryLoadInitialPublishedData();
+    if(!published){
+      hideLoadingIndicator();
+      toast('❌ Aucune donnée trouvée',
+        'Le fichier data.json n\'est pas accessible sur le serveur. Vérifiez qu\'il a bien été uploadé sur GitHub.',
+        'error');
+      return;
+    }
+    // Conserve l'utilisateur courant avant la fusion
+    const currentUser = state.currentUser;
+    // Applique les données publiées
+    applyInitialPublishedData(published);
+    // Restaure l'utilisateur courant
+    state.currentUser = currentUser;
+    // Sauvegarde dans IndexedDB et localStorage
+    saveState();
+    hideLoadingIndicator();
+    const nbMembres = (published.members||[]).length;
+    const nbTransactions = (published.transactions||[]).length;
+    toast('✅ Données chargées avec succès',
+      `${nbMembres} membres et ${nbTransactions} transactions chargés depuis le serveur.`,
+      'success');
+    // Rafraîchit l'affichage
+    navigateTo('dashboard');
+    // Met à jour le statut dans la carte
+    setTimeout(() => {
+      const status = document.getElementById('serverDataStatus');
+      if(status){
+        status.innerHTML = `<strong>📊 État actuel :</strong><br>
+          • Membres locaux : <strong>${(state.members||[]).length}</strong><br>
+          • Transactions locales : <strong>${(state.transactions||[]).length}</strong>`;
+      }
+    }, 500);
+  } catch(err){
+    hideLoadingIndicator();
+    console.error('forceLoadPublishedData error:', err);
+    toast('Erreur', 'Impossible de charger les données : ' + err.message, 'error');
+  }
 }
 
 // Applique les données publiées à state (pour les membres en lecture seule)
@@ -7407,6 +7458,17 @@ MODULES.settings = function(){
       <div class="form-group"><label>Nom de l'association</label><input value="${escapeHtml(state.settings.associationName||'')}" onchange="settingsForm.associationName=this.value"></div>
       <div class="form-group"><label>Année en cours</label><input type="number" value="${state.settings.anneeEnCours||getCurrentYear()}" onchange="settingsForm.anneeEnCours=parseInt(this.value)||getCurrentYear()"></div>
       <button class="btn btn-primary mt-2" onclick="saveSettings()">Enregistrer les paramètres</button>
+    </div></div>
+    <div class="card"><div class="card-header"><div class="card-title">📡 Synchronisation serveur (data.json)</div></div>
+    <div class="card-body">
+      <p class="text-sm mb-3">Permet de <strong>charger les données publiées</strong> (membres, finances, etc.) depuis le serveur. Utile si votre tableau de bord est vide ou si vous voulez récupérer les dernières données publiées par l'administrateur.</p>
+      <div class="form-alert info mb-3" id="serverDataStatus">
+        <strong>📊 État actuel :</strong><br>
+        • Membres locaux : <strong>${(state.members||[]).length}</strong><br>
+        • Transactions locales : <strong>${(state.transactions||[]).length}</strong>
+      </div>
+      <button class="btn btn-primary" onclick="forceLoadPublishedData()">🔄 Charger les données du serveur</button>
+      <p class="form-hint mt-2">Cette action remplace vos données locales par les données publiées sur le serveur. Vos données locales seront sauvegardées dans IndexedDB.</p>
     </div></div>
     <div class="card"><div class="card-header"><div class="card-title">💰 Constantes financières</div></div>
     <div class="card-body">
