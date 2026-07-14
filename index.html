@@ -410,7 +410,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.9</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.12</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -476,7 +476,7 @@ const TRANSLATIONS = {
     'sidebar.assocName': "Gestion d'Association",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.9',
+    'sidebar.version': 'APD-MINAT • Version 6.12',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -797,7 +797,7 @@ const TRANSLATIONS = {
     'sidebar.assocName': 'Association Management',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.9',
+    'sidebar.version': 'APD-MINAT • Version 6.12',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -1966,12 +1966,12 @@ let state = {
   // autoSync: true = synchronisation automatique toutes les 5 min (si online et configuré).
   // lastPushedBy: nom d'utilisateur du dernier à avoir poussé (traçabilité).
   sync: {
-    backend: 'none',
-    url: '',
-    apiKey: '',
+    backend: 'supabase',
+    url: 'https://itqvgparlhkcmwtauftf.supabase.co',
+    apiKey: 'sb_publishable_INixWhXePdSDPfiU1E-JGg_WVI-Bbad',
     table: 'amicale_data',
     recordId: 'MINAT-19DFB2D9', // ID fixe de l'amicale dans la table cloud
-    autoSync: false,
+    autoSync: true,
     autoSyncInterval: 5, // minutes
     localVersion: null,   // Date.now() du dernier saveState()
     lastSyncAt: null,     // Date.now() du dernier push/pull réussi
@@ -2241,6 +2241,18 @@ function finalizeLoad(){
   // vides ou indisponibles, cas typique d'un fichier HTML ouvert depuis WhatsApp sur Android),
   // on s'assure a minima que DEFAULT_USERS est présent pour permettre la connexion.
   // (suite plus bas : la migration existante gère déjà ce cas en réinitialisant state.users.)
+  // 🌐 V6.12 : MIGRATION SUPABASE — Force la config cloud partagée pour TOUS les utilisateurs.
+  // Garantit que tout le monde se connecte au même Supabase (amicale partagée), même si
+  // l'utilisateur a une ancienne version en localStorage avec une config vide ou différente.
+  // On préserve uniquement lastSyncAt/lastPushedBy/localVersion (état sync) qu'on ne peut pas forcer.
+  state.sync = Object.assign({}, state.sync, {
+    backend: 'supabase',
+    url: 'https://itqvgparlhkcmwtauftf.supabase.co',
+    apiKey: 'sb_publishable_INixWhXePdSDPfiU1E-JGg_WVI-Bbad',
+    table: 'amicale_data',
+    recordId: 'MINAT-19DFB2D9',
+    autoSync: true,
+  });
   // Migration des données existantes : "Président Fondateur" → "Fondateur" (renommage du rôle)
   // N'affecte que les bureau.role existants en mémoire — silencieux, idempotent
   if(Array.isArray(state.bureau)){
@@ -2299,6 +2311,41 @@ function finalizeLoad(){
     updateSidebarUserDisplay();
     renderNav();
     navigateTo('dashboard');
+  }
+
+  // 🌐 V6.12 : DÉMARRAGE AUTO SYNC SUPABASE
+  // Une fois la config forcée (voir plus haut), on démarre le timer d'auto-sync
+  // et on tente un PULL initial silencieux pour récupérer les dernières données cloud.
+  try {
+    if(typeof isCloudConfigured === 'function' && isCloudConfigured() && state.sync.autoSync){
+      if(typeof startAutoSyncTimer === 'function') startAutoSyncTimer();
+      // Pull initial après 3 secondes (laisse le temps à l'UI de se charger)
+      // On vérifie d'abord si le cloud a des données — sinon on ne fait rien (pas d'erreur)
+      setTimeout(async () => {
+        try {
+          if(typeof isOnline !== 'function' || !isOnline()) return;
+          if(typeof fetchCloudRecord !== 'function' || typeof pullFromCloud !== 'function') return;
+          const cloud = await fetchCloudRecord();
+          if(cloud && cloud.data){
+            // Il y a des données cloud → on tire silencieusement
+            await pullFromCloud(true).catch(err => {
+              console.warn('Initial cloud pull failed:', err.message || err);
+            });
+          } else {
+            // Pas encore de données cloud → on pousse l'état local pour initialiser
+            if(typeof pushToCloud === 'function'){
+              await pushToCloud(true).catch(err => {
+                console.warn('Initial cloud push failed:', err.message || err);
+              });
+            }
+          }
+        } catch(err){
+          console.warn('Initial cloud sync skipped:', err.message || err);
+        }
+      }, 3000);
+    }
+  } catch(syncInitErr){
+    console.warn('Auto-sync init skipped:', syncInitErr);
   }
 }
 
