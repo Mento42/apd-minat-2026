@@ -410,7 +410,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.12</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.14</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -476,7 +476,7 @@ const TRANSLATIONS = {
     'sidebar.assocName': "Gestion d'Association",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.12',
+    'sidebar.version': 'APD-MINAT • Version 6.14',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -797,7 +797,7 @@ const TRANSLATIONS = {
     'sidebar.assocName': 'Association Management',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.12',
+    'sidebar.version': 'APD-MINAT • Version 6.14',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -3318,7 +3318,9 @@ function formatAuditEntry(entry){
 /* ---------- NAVIGATION ---------- */
 function renderNav(){
   const nav = document.getElementById('navMenu');
-  nav.innerHTML = NAV_ITEMS.map(item => `
+  // V6.14 : les membres n'ont pas accès à l'onglet Paramètres (réservé aux administrateurs)
+  const visibleItems = NAV_ITEMS.filter(item => item.id !== 'settings' || isAdmin());
+  nav.innerHTML = visibleItems.map(item => `
     <div class="nav-item ${state.activeModule===item.id?'active':''}" onclick="navigateTo('${item.id}')">
       <span class="icon">${item.icon}</span> ${t(item.labelKey)}
     </div>`).join('');
@@ -3326,6 +3328,12 @@ function renderNav(){
   updateLogoDisplays();
 }
 function navigateTo(moduleId){
+  // V6.14 : sécurité backend — un membre ne peut PAS accéder à l'onglet Paramètres
+  if(moduleId === 'settings' && !isAdmin()){
+    toast('Accès refusé', 'L\'onglet Paramètres est réservé aux administrateurs.', 'error');
+    // Redirige vers le dashboard si un membre tente d'y accéder
+    moduleId = 'dashboard';
+  }
   state.activeModule = moduleId;
   saveState();
   renderNav();
@@ -8917,6 +8925,20 @@ function showShareCloudGuide(){
 /* ---------- PARAMÈTRES ---------- */
 let settingsForm = {};
 MODULES.settings = function(){
+  // V6.14 : les membres n'ont pas accès à l'onglet Paramètres (sécurité backend)
+  if(!isAdmin()){
+    return `
+      <div class="page-header">
+        <div><h1>🔒 Accès refusé</h1><p>Onglet réservé aux administrateurs</p></div>
+      </div>
+      <div class="card"><div class="card-body">
+        <div class="form-alert warning">
+          <strong>Accès restreint</strong><br>
+          <span class="text-sm">L'onglet <strong>Paramètres</strong> est réservé aux administrateurs de l'Amicale (Bureau Exécutif et Administrateur Technique). En tant que membre, vous pouvez consulter toutes les données de l'Amicale dans les autres onglets, mais vous ne pouvez pas modifier la configuration de l'application. Pour toute demande, contactez le Bureau Exécutif.</span>
+        </div>
+      </div></div>
+    `;
+  }
   return `
     <div class="page-header">
       <div><h1>⚙️ Paramètres</h1><p>Configuration de l'application</p></div>
