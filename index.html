@@ -1946,6 +1946,15 @@ const DEFAULT_USERS = [
   { id:'u_mbr',   username:'membre',     password:'apd2025',    role:'membre', bureauRole:null,                 membreId:null, mustChangePassword:false, createdAt:new Date().toISOString() },
 ];
 
+// ════════════════════════════════════════════════════════════════
+// 🛡️ V6.17 (15 juillet 2026) : Correction du bug de persistance des mots de passe
+//  • loadState() préserve TOUJOURS les users locaux (MDP personnalisés)
+//  • applyPublishedData() ne remplace PLUS state.users par data.users (sans MDP)
+//  • applyInitialPublishedData() n'écrase PLUS les MDP existants
+//  • changeMyPassword() / resetUserPassword() : double saveState() (IDB + LS)
+// Voir scripts/fix_password_persistence.py pour le détail des correctifs.
+// ════════════════════════════════════════════════════════════════
+
 // 🛡️ V6.8 : Définit DEFAULT_LOGO pour éviter ReferenceError dans updateLogoDisplays()
 // Ce logo par défaut sera utilisé si state.settings.logo est vide.
 const DEFAULT_LOGO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzBmNWI0NSIvPjx0ZXh0IHg9IjUwIiB5PSI2MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkFQRDwvdGV4dD48L3N2Zz4=';
@@ -2262,6 +2271,20 @@ function loadState(){
           console.log('✓ Données locales utilisées (plus complètes):', localMembers, 'membres');
         } else {
           console.log('✓ Données embarquées conservées:', state.members.length, 'membres');
+          // 🛡️ V6.17 : Même si on garde les données embarquées pour members/transactions,
+          // on DOIT préserver les comptes utilisateurs locaux (mots de passe personnalisés),
+          // le journal d'audit et les sessions actives. Sinon, tout changement de mot de
+          // passe est perdu au prochain chargement (les données embarquées ont les MDP par défaut).
+          if(Array.isArray(data.users) && data.users.length > 0){
+            state.users = data.users;
+            console.log('🛡️ V6.17: users locaux préservés (', data.users.length, 'comptes)');
+          }
+          if(Array.isArray(data.auditLog)){
+            state.auditLog = data.auditLog;
+          }
+          if(data.activeSessions && typeof data.activeSessions === 'object'){
+            state.activeSessions = data.activeSessions;
+          }
         }
       }
       // Si pas de données locales, on garde les données embarquées (déjà dans state)
@@ -2286,6 +2309,18 @@ function loadState(){
         if(localMembers > embeddedMembersCount){
           state = { ...state, ...parsed };
           console.log('✓ Données localStorage utilisées:', localMembers, 'membres');
+        } else {
+          // 🛡️ V6.17 : préserver users/auditLog/activeSessions locaux même si embedded gagne
+          if(Array.isArray(parsed.users) && parsed.users.length > 0){
+            state.users = parsed.users;
+            console.log('🛡️ V6.17: users locaux préservés (localStorage,', parsed.users.length, 'comptes)');
+          }
+          if(Array.isArray(parsed.auditLog)){
+            state.auditLog = parsed.auditLog;
+          }
+          if(parsed.activeSessions && typeof parsed.activeSessions === 'object'){
+            state.activeSessions = parsed.activeSessions;
+          }
         }
       }
     } catch(e){ console.error('Erreur localStorage:', e); }
@@ -2945,18 +2980,26 @@ function applyInitialPublishedData(data){
   if(!data || typeof data !== 'object') return false;
   // On préserve les utilisateurs par défaut (DEFAULT_USERS) — ils ont les mots de passe
   const defaultUsers = (typeof DEFAULT_USERS !== 'undefined') ? DEFAULT_USERS.map(u => ({ ...u })) : [];
+  // 🛡️ V6.17 : préserve les users locaux (avec MDP personnalisés) avant la fusion
+  const preservedUsers = (Array.isArray(state.users) && state.users.length > 0)
+    ? state.users.map(u => ({ ...u }))
+    : null;
   // Fusion : data d'abord, puis on garantit que DEFAULT_USERS est présent
   state = { ...state, ...data };
+  // 🛡️ V6.17 : restaure les users locaux si on en avait — data.users n'a pas de MDP
+  if(preservedUsers){
+    state.users = preservedUsers;
+  }
   // Toujours réinjecter DEFAULT_USERS (avec mots de passe) pour permettre la connexion
   if(!Array.isArray(state.users) || state.users.length === 0){
     state.users = defaultUsers;
   } else {
-    // Remplace les users sans mot de passe par ceux de DEFAULT_USERS (qui ont les mots de passe)
+    // 🛡️ V6.17 : ajoute les comptes manquants SANS écraser les mots de passe existants
     defaultUsers.forEach(dflt => {
       const existing = state.users.find(u => u.username === dflt.username);
       if(existing){
-        // Conserve les champs existants mais ajoute le mot de passe de DEFAULT_USERS
-        existing.password = dflt.password;
+        // Conserve les champs existants — NE PAS écraser le mot de passe local
+        if(!existing.password) existing.password = dflt.password;
         if(existing.role === undefined) existing.role = dflt.role;
         if(existing.bureauRole === undefined) existing.bureauRole = dflt.bureauRole;
       } else {
@@ -3025,26 +3068,36 @@ function applyPublishedData(data){
   // On préserve les utilisateurs par défaut (DEFAULT_USERS) et l'utilisateur courant
   const defaultUsers = (typeof DEFAULT_USERS !== 'undefined') ? DEFAULT_USERS.map(u => ({ ...u })) : [];
   const currentUser = state.currentUser;
+  // 🛡️ V6.17 : On préserve TOUJOURS les users locaux (avec leurs mots de passe).
+  // data.users (de data.json) n'a PAS de mots de passe (publishDataForMembers les retire
+  // pour des raisons de sécurité). Si on remplace state.users par data.users, tous les
+  // mots de passe personnalisés sont perdus.
+  const preservedUsers = (Array.isArray(state.users) && state.users.length > 0)
+    ? state.users
+    : defaultUsers;
   // 🌐 V6.16 : préserve la config sync (Supabase) — sinon data.json l'écrase avec backend="none"
   // et désactive tous les mécanismes de sync temps réel pour les membres.
   const preservedSync = state.sync;
   const preservedActiveModule = state.activeModule;
+  const preservedAuditLog = state.auditLog;
+  const preservedActiveSessions = state.activeSessions;
   // On fusionne : data primero, puis on garantit que DEFAULT_USERS est présent
   state = { ...state, ...data };
   // 🌐 V6.16 : restaure la config sync préservée (force Supabase cloud)
   if(preservedSync && preservedSync.backend === 'supabase'){
     state.sync = preservedSync;
   }
-  if(!Array.isArray(state.users) || state.users.length === 0){
-    state.users = defaultUsers;
-  } else {
-    // S'assure que tous les comptes par défaut existent (notamment 'membre')
-    defaultUsers.forEach(dflt => {
-      if(!state.users.find(u => u.username === dflt.username)){
-        state.users.push({ ...dflt });
-      }
-    });
-  }
+  // 🛡️ V6.17 : restaure les users locaux (avec mots de passe) — JAMAIS remplacés par data.users
+  state.users = preservedUsers;
+  // S'assure que tous les comptes par défaut existent (notamment 'membre')
+  defaultUsers.forEach(dflt => {
+    if(!state.users.find(u => u.username === dflt.username)){
+      state.users.push({ ...dflt });
+    }
+  });
+  // Restaure aussi le journal d'audit et les sessions actives locaux
+  if(Array.isArray(preservedAuditLog)) state.auditLog = preservedAuditLog;
+  if(preservedActiveSessions && typeof preservedActiveSessions === 'object') state.activeSessions = preservedActiveSessions;
   state.currentUser = currentUser; // On restaure l'utilisateur connecté
   // Marque l'état comme « lecture seule » pour les membres
   window._publishedDataMode = true;
@@ -3135,21 +3188,25 @@ function doLogin(){
     err.style.display = 'block';
     return;
   }
-  // 🛡️ Recherche l'utilisateur dans state.users EN PREMIER, puis dans DEFAULT_USERS en fallback.
-  // Cela permet à un compte par défaut (ex: 'membre' ajouté en V6.1) de fonctionner immédiatement
-  // même si la migration n'a pas encore tourné ou si state.users contient d'anciennes données.
+  // 🛡️ Recherche l'utilisateur dans state.users EN PREMIER.
   let user = state.users.find(x => x.username === u && x.password === p);
+  // 🛡️ V6.17 : Fallback DEFAULT_USERS UNIQUEMENT si l'utilisateur n'existe pas encore dans
+  // state.users (ex: 1ère connexion après migration). Si l'utilisateur existe mais avec un MDP
+  // différent, on NE fait PAS de fallback — sinon l'ancien MDP par défaut continuerait à fonctionner
+  // après un changement de MDP, ce qui est une faille de sécurité.
   if(!user && typeof DEFAULT_USERS !== 'undefined'){
-    const dflt = DEFAULT_USERS.find(x => x.username === u && x.password === p);
-    if(dflt){
-      // Ajoute le compte par défaut manquant à state.users pour qu'il soit persistant
-      const exists = state.users.find(x => x.username === dflt.username);
-      if(!exists){
+    const existingByUsername = state.users.find(x => x.username === u);
+    if(!existingByUsername){
+      // L'utilisateur n'existe pas du tout dans state.users → on peut utiliser DEFAULT_USERS
+      const dflt = DEFAULT_USERS.find(x => x.username === u && x.password === p);
+      if(dflt){
         state.users.push({ ...dflt });
         saveState();
+        user = state.users.find(x => x.username === u);
       }
-      user = dflt;
     }
+    // Si existingByUsername existe mais que son MDP ne correspond pas, on ne fait rien :
+    // l'utilisateur a changé son MDP et l'ancien MDP par défaut ne doit PLUS fonctionner.
   }
   if(!user){
     err.textContent = 'Nom d\'utilisateur ou mot de passe incorrect.';
@@ -9686,8 +9743,12 @@ function changeMyPassword(){
   state.users[userIdx].password = newPwd;
   state.users[userIdx].mustChangePassword = false;
   state.currentUser = { ...state.users[userIdx] };
+  // 🛡️ V6.17 : double saveState() pour garantir la persistance (IndexedDB + localStorage)
   saveState();
+  // Force aussi localStorage au cas où IndexedDB échoue silencieusement
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
   updateSidebarUserDisplay();
+  console.log('🛡️ V6.17: mot de passe changé pour', state.users[userIdx].username, '— persisté en IDB + LS');
   // Vide les champs
   document.getElementById('myCurrentPassword').value = '';
   document.getElementById('myNewPassword').value = '';
@@ -9707,7 +9768,10 @@ function resetUserPassword(userId){
   if(!confirm(`Réinitialiser le mot de passe de "${user.username}" ?\n\nLe mot de passe sera : "${user.username}"\nL'utilisateur devra le changer à sa prochaine connexion.`)) return;
   user.password = user.username; // reset au username par défaut
   user.mustChangePassword = true;
+  // 🛡️ V6.17 : double saveState() pour garantir la persistance
   saveState();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+  console.log('🛡️ V6.17: mot de passe réinitialisé pour', user.username, '— persisté en IDB + LS');
   toast('Mot de passe réinitialisé', `Le mot de passe de "${user.username}" a été réinitialisé à "${user.username}". L'utilisateur devra le changer à la prochaine connexion.`, 'success');
   navigateTo('settings');
 }
