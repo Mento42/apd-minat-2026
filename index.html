@@ -345,6 +345,47 @@
   .logo-preview{width:96px;height:96px;border-radius:10px;border:2px dashed var(--emerald-300);display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--gray-50);flex-shrink:0}
   .logo-preview img{width:100%;height:100%;object-fit:cover}
   .logo-preview .placeholder{color:var(--gray-400);font-size:32px}
+
+/* V6.16 : Indicateur de sync temps réel dans la sidebar */
+.sidebar-sync-status{
+  margin-top:10px;padding:6px 10px;border-radius:6px;
+  font-size:10px;line-height:1.4;text-align:center;
+  background:rgba(167,243,208,0.08);border:1px solid rgba(167,243,208,0.18);
+  color:rgba(167,243,208,0.75);transition:all .3s ease;
+}
+.sidebar-sync-status.syncing{
+  background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.4);
+  color:#bfdbfe;
+}
+.sidebar-sync-status.sync-ok{
+  background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.3);
+  color:#a7f3d0;
+}
+.sidebar-sync-status.sync-err{
+  background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3);
+  color:#fecaca;
+}
+.sidebar-sync-status.sync-offline{
+  background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.3);
+  color:#fde68a;
+}
+.sidebar-sync-status .sync-dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  margin-right:5px;vertical-align:middle;background:#a7f3d0;
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+.sidebar-sync-status.syncing .sync-dot{background:#60a5fa;animation-duration:.8s}
+.sidebar-sync-status.sync-err .sync-dot{background:#f87171;animation:none}
+.sidebar-sync-status.sync-offline .sync-dot{background:#facc15;animation:none}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-toast{
+  position:fixed;bottom:20px;right:20px;z-index:10000;
+  background:#0f5b45;color:white;padding:10px 16px;border-radius:8px;
+  font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);
+  opacity:0;transform:translateY(20px);transition:all .3s ease;
+  max-width:320px;
+}
+.sync-toast.show{opacity:1;transform:translateY(0)}
 </style>
 </head>
 <body>
@@ -407,10 +448,11 @@
       <nav id="navMenu"></nav>
       <div class="sidebar-footer">
         <div id="sidebarUser">Connecté: <strong>admin</strong></div>
+        <div id="sidebarSyncStatus" class="sidebar-sync-status sync-offline"><span class="sync-dot"></span><span id="syncStatusText">Sync: en attente…</span></div>
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.15</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.16</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -2368,6 +2410,15 @@ function finalizeLoad(){
   } catch(syncInitErr){
     console.warn('Auto-sync init skipped:', syncInitErr);
   }
+  // 🌐 V6.16 : DÉMARRAGE DE LA SYNCHRONISATION TEMPS RÉEL
+  // Lance le pull rapide 30s, la subscription WebSocket Realtime, et les listeners navigateur.
+  try {
+    if(typeof initRealtimeSync === 'function'){
+      initRealtimeSync();
+    }
+  } catch(e){
+    console.warn('V6.16 realtime init skipped:', e);
+  }
 }
 
 // Met à jour l'affichage utilisateur dans la sidebar avec rôle + badge.
@@ -2974,8 +3025,16 @@ function applyPublishedData(data){
   // On préserve les utilisateurs par défaut (DEFAULT_USERS) et l'utilisateur courant
   const defaultUsers = (typeof DEFAULT_USERS !== 'undefined') ? DEFAULT_USERS.map(u => ({ ...u })) : [];
   const currentUser = state.currentUser;
+  // 🌐 V6.16 : préserve la config sync (Supabase) — sinon data.json l'écrase avec backend="none"
+  // et désactive tous les mécanismes de sync temps réel pour les membres.
+  const preservedSync = state.sync;
+  const preservedActiveModule = state.activeModule;
   // On fusionne : data primero, puis on garantit que DEFAULT_USERS est présent
   state = { ...state, ...data };
+  // 🌐 V6.16 : restaure la config sync préservée (force Supabase cloud)
+  if(preservedSync && preservedSync.backend === 'supabase'){
+    state.sync = preservedSync;
+  }
   if(!Array.isArray(state.users) || state.users.length === 0){
     state.users = defaultUsers;
   } else {
@@ -2989,6 +3048,10 @@ function applyPublishedData(data){
   state.currentUser = currentUser; // On restaure l'utilisateur connecté
   // Marque l'état comme « lecture seule » pour les membres
   window._publishedDataMode = true;
+  // 🌐 V6.16 : met à jour l'indicateur de sync après application des données publiées
+  if(typeof refreshSyncStatusDisplay === 'function'){
+    setTimeout(refreshSyncStatusDisplay, 100);
+  }
   return true;
 }
 
@@ -3122,25 +3185,70 @@ function doLogin(){
   }
   // 🌐 V6.3 : si l'utilisateur est un membre (lecture seule), on charge les données publiées (data.json)
   // depuis le serveur (Vercel). Les admins utilisent leurs données locales (IndexedDB).
+  // 🌐 V6.16 : en PRIORITÉ, on tente un PULL Supabase (temps réel) avant data.json (statique).
   if(user.role === 'membre'){
     showLoadingIndicator('Chargement des données de l\'Amicale…');
-    loadPublishedData().then(published => {
-      if(published){
-        applyPublishedData(published);
-        toast('📡 Données chargées', 'Données de l\'Amicale chargées depuis le serveur (mode lecture seule).', 'success');
-      } else {
-        toast('⚠ Aucune donnée publiée',
-          'L\'administrateur n\'a pas encore publié de données. Revenez plus tard ou contactez le Bureau Exécutif.',
-          'warning');
-      }
-      hideLoadingIndicator();
-      navigateTo('dashboard');
-    }).catch(err => {
-      console.error('Erreur loadPublishedData:', err);
-      hideLoadingIndicator();
-      toast('Erreur de chargement', 'Impossible de charger les données publiées. Vérifiez votre connexion.', 'error');
-      navigateTo('dashboard');
-    });
+    // V6.16 : tente d'abord Supabase cloud (temps réel)
+    const tryCloudFirst = (typeof isCloudConfigured === 'function' && isCloudConfigured()
+      && typeof silentPullFromCloud === 'function');
+    if(tryCloudFirst){
+      silentPullFromCloud().then(pulled => {
+        if(pulled){
+          toast('📡 Données synchronisées', 'Données de l\'Amicale chargées depuis le cloud (temps réel).', 'success');
+          refreshSyncStatusDisplay();
+          hideLoadingIndicator();
+          navigateTo('dashboard');
+          // V6.16 : re-affiche le statut après le navigateTo (qui peut réinitialiser l'affichage)
+          setTimeout(refreshSyncStatusDisplay, 200);
+        } else {
+          // Cloud accessible mais pas plus récent → fallback data.json
+          fallbackToPublishedData();
+        }
+      }).catch(err => {
+        console.warn('V6.16: pull cloud échoué pour membre, fallback data.json:', err);
+        fallbackToPublishedData();
+      });
+    } else {
+      // Pas de cloud configuré → data.json directement
+      fallbackToPublishedData();
+    }
+    // Fallback : charge data.json (mode statique)
+    function fallbackToPublishedData(){
+      loadPublishedData().then(published => {
+        if(published){
+          applyPublishedData(published);
+          toast('📡 Données chargées', 'Données de l\'Amicale chargées depuis le serveur (mode statique).', 'success');
+          // V6.16 : après data.json, on tente quand même un pull Supabase pour avoir les dernières données
+          if(typeof isCloudConfigured === 'function' && isCloudConfigured()
+            && typeof silentPullFromCloud === 'function'){
+            setTimeout(() => {
+              silentPullFromCloud().then(p => {
+                if(p){
+                  toast('🔄 Mise à jour', 'Données actualisées depuis le cloud.', 'success');
+                  refreshSyncStatusDisplay();
+                  if(typeof navigateTo === 'function' && state.activeModule){
+                    navigateTo(state.activeModule);
+                  }
+                } else {
+                  refreshSyncStatusDisplay();
+                }
+              }).catch(()=>{});
+            }, 1500);
+          }
+        } else {
+          toast('⚠ Aucune donnée publiée',
+            'L\'administrateur n\'a pas encore publié de données. Revenez plus tard ou contactez le Bureau Exécutif.',
+            'warning');
+        }
+        hideLoadingIndicator();
+        navigateTo('dashboard');
+      }).catch(err => {
+        console.error('Erreur loadPublishedData:', err);
+        hideLoadingIndicator();
+        toast('Erreur de chargement', 'Impossible de charger les données publiées. Vérifiez votre connexion.', 'error');
+        navigateTo('dashboard');
+      });
+    }
   } else if(user.mustChangePassword){
     // Si l'utilisateur doit changer son mot de passe, on l'alerte et on l'envoie aux Paramètres.
     toast('⚠ Mot de passe à changer', 'Pour la sécurité, veuillez changer votre mot de passe dans Paramètres → Sécurité.', 'warning');
@@ -3368,6 +3476,11 @@ function navigateTo(moduleId){
   if(moduleId === 'tontines') renderTontine();
   // Auto-translate DOM (FR→EN) — runs only if CURRENT_LANG === 'en'
   try { autoTranslateDOM(); } catch(e){ console.warn('autoTranslateDOM error:', e); }
+  // V6.16 : à chaque changement de page, on vérifie silencieusement si le cloud a bougé
+  // (le pull est throttled à 10s, donc pas de spam réseau)
+  if(typeof silentPullFromCloud === 'function'){
+    silentPullFromCloud().catch(()=>{});
+  }
 }
 
 /* ---------- SEED DEMO DATA ---------- */
@@ -8583,8 +8696,13 @@ function startAutoSyncTimer(){
   const intervalMs = Math.max(1, state.sync.autoSyncInterval || 5) * 60 * 1000;
   _autoSyncTimer = setInterval(() => {
     if(!isOnline() || _syncInProgress) return;
-    // Auto-push silencieux — ne demande pas confirmation en cas de conflit (fail-safe : skip)
-    pushToCloud(true).catch(()=>{});
+    // V6.16 : PULL silencieux d'abord (récupère les changements cloud)
+    silentPullFromCloud().catch(()=>{});
+    // Puis PUSH silencieux — mais UNIQUEMENT si l'utilisateur a des droits d'écriture
+    // (les MEMBRES en lecture seule ne poussent JAMAIS, ils n'ont rien à pousser)
+    if(typeof isAdmin === 'function' && isAdmin()){
+      pushToCloud(true).catch(()=>{});
+    }
   }, intervalMs);
 }
 function stopAutoSyncTimer(){
@@ -8594,6 +8712,315 @@ function stopAutoSyncTimer(){
   }
 }
 // Sauvegarde la configuration cloud depuis le formulaire Settings
+
+// ════════════════════════════════════════════════════════════════
+// V6.16 : SYNCHRONISATION TEMPS RÉEL POUR TOUS LES UTILISATEURS
+// ════════════════════════════════════════════════════════════════
+let _fastPullTimer = null;
+let _lastPullCheck = 0;          // timestamp du dernier check pull
+let _lastKnownCloudTs = 0;       // timestamp cloud connu localement
+let _realtimeChannel = null;     // WebSocket Supabase Realtime
+let _syncToastTimer = null;      // timer pour masquer le toast sync
+let _lastFocusedAt = Date.now(); // dernier focus de la fenêtre
+
+// Met à jour l'indicateur visuel de sync dans la sidebar.
+function updateSyncStatusUI(state, msg){
+  const el = document.getElementById('sidebarSyncStatus');
+  const txt = document.getElementById('syncStatusText');
+  if(!el || !txt) return;
+  el.className = 'sidebar-sync-status ' + (state || 'sync-offline');
+  txt.textContent = msg || 'Sync: en attente…';
+}
+
+// Affiche un toast temporaire en bas à droite pour signaler une sync réussie.
+function showSyncToast(msg){
+  const el = document.getElementById('syncToast');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  if(_syncToastTimer) clearTimeout(_syncToastTimer);
+  _syncToastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// Formate un timestamp pour l'affichage (ex: "il y a 2 min").
+function formatSyncTime(ts){
+  if(!ts) return 'jamais';
+  const diff = Date.now() - ts;
+  if(diff < 60000) return 'à l\'instant';
+  if(diff < 3600000) return Math.floor(diff/60000) + ' min';
+  if(diff < 86400000) return Math.floor(diff/3600000) + ' h';
+  return new Date(ts).toLocaleDateString('fr-FR');
+}
+
+// Met à jour l'indicateur avec le timestamp de dernière sync.
+function refreshSyncStatusDisplay(){
+  if(!isCloudConfigured()){
+    updateSyncStatusUI('sync-offline', 'Sync: non configurée');
+    return;
+  }
+  if(!isOnline()){
+    updateSyncStatusUI('sync-offline', 'Sync: hors-ligne');
+    return;
+  }
+  const lastSync = state.sync?.lastSyncAt || 0;
+  const lastErr = state.sync?.lastError;
+  if(lastErr){
+    updateSyncStatusUI('sync-err', '⚠ Sync: erreur');
+    return;
+  }
+  if(lastSync){
+    updateSyncStatusUI('sync-ok', '⟳ Sync: ' + formatSyncTime(lastSync));
+  } else {
+    updateSyncStatusUI('sync-offline', 'Sync: en attente…');
+  }
+}
+
+// PULL SILENCIEUX — ne montre AUCUN toast d'erreur, ne demande JAMAIS confirmation.
+// Compare les timestamps; ne tire QUE si le cloud est plus récent que le local.
+// Retourne true si des données ont été effectivement tirées.
+async function silentPullFromCloud(){
+  if(!isCloudConfigured()) return false;
+  if(!isOnline()) return false;
+  if(_syncInProgress) return false;
+  // Throttle : pas plus d'un check toutes les 10s
+  const now = Date.now();
+  if(now - _lastPullCheck < 10000) return false;
+  _lastPullCheck = now;
+  try {
+    const cloud = await fetchCloudRecord();
+    if(!cloud || !cloud.data) return false;
+    const cloudTs = cloud.updated_at ? new Date(cloud.updated_at).getTime() : 0;
+    const localTs = state.sync?.localVersion || 0;
+    // Si le cloud n'est pas plus récent (tolérance 5s), on ne fait rien
+    if(cloudTs <= localTs + 5000) return false;
+    // Le cloud est plus récent → on tire silencieusement
+    _syncInProgress = true;
+    try {
+      // Préserve les champs locaux (session, users, sync meta)
+      const preserved = {
+        sync: state.sync,
+        currentUser: state.currentUser,
+        activeModule: state.activeModule,
+        users: state.users,
+        auditLog: state.auditLog,
+        activeSessions: state.activeSessions,
+      };
+      state = Object.assign({}, cloud.data, preserved);
+      // Met à jour les méta sync
+      state.sync.lastSyncAt = Date.now();
+      state.sync.lastPushedBy = cloud.updated_by || null;
+      state.sync.lastError = null;
+      state.sync.localVersion = cloudTs;
+      _lastKnownCloudTs = cloudTs;
+      saveState();
+      // Rafraîchit l'affichage de la page courante
+      if(typeof navigateTo === 'function' && state.activeModule){
+        navigateTo(state.activeModule);
+      }
+      refreshSyncStatusDisplay();
+      const pushedBy = cloud.updated_by ? ' par ' + cloud.updated_by : '';
+      showSyncToast('🔄 Données mises à jour' + pushedBy);
+      console.log('V6.16 silentPull: données mises à jour (cloud=' + new Date(cloudTs).toISOString() + ')');
+      return true;
+    } finally {
+      _syncInProgress = false;
+    }
+  } catch(e){
+    // Erreur silencieuse — on ne perturbe pas l'utilisateur
+    console.debug('V6.16 silentPull skipped:', e.message || e);
+    return false;
+  }
+}
+
+// Démarre le timer de pull rapide (toutes les 30s) — indépendant du timer push.
+function startFastPullTimer(){
+  stopFastPullTimer();
+  if(!isCloudConfigured()) return;
+  // Toutes les 30 secondes, on vérifie silencieusement si le cloud a bougé
+  _fastPullTimer = setInterval(() => {
+    if(!isOnline() || _syncInProgress) return;
+    silentPullFromCloud().catch(()=>{});
+  }, 30000);
+  console.log('V6.16: fast pull timer démarré (30s)');
+}
+function stopFastPullTimer(){
+  if(_fastPullTimer){
+    clearInterval(_fastPullTimer);
+    _fastPullTimer = null;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// V6.16 : SUBSCRIPTION SUPABASE REALTIME (WebSocket)
+// Récupère INSTANTANÉMENT les changements cloud via les channels Postgres.
+// Nécessite que la table `amicale_data` soit dans la publication `supabase_realtime`.
+// Si non configuré, on retombe sur le polling 30s — pas d'erreur.
+// ════════════════════════════════════════════════════════════════
+function startRealtimeSubscription(){
+  stopRealtimeSubscription();
+  if(!isCloudConfigured()) return;
+  if(typeof window === 'undefined' || !window.WebSocket) return;
+  try {
+    // URL WebSocket Supabase Realtime : wss://<project>.supabase.co/realtime/v1/websocket
+    const base = String(state.sync.url || '').replace(/^https?:\/\//, 'wss://').replace(/\/+$/, '');
+    const wsUrl = base + '/realtime/v1/websocket?apikey=' + encodeURIComponent(state.sync.apiKey) + '&vsn=1.0.0';
+    // On utilise l'API Phoenix Channels de Supabase Realtime (v1)
+    const ws = new WebSocket(wsUrl);
+    let _joined = false;
+    let _pingTimer = null;
+    ws.onopen = () => {
+      console.log('V6.16: WebSocket Realtime connecté');
+      // Rejoins le channel postgres_changes pour la table amicale_data
+      const joinMsg = {
+        topic: 'realtime:public',
+        event: 'phx_join',
+        payload: {
+          config: {
+            broadcast: { self: false },
+            postgres_changes: [{
+              event: '*',
+              schema: 'public',
+              table: state.sync.table || 'amicale_data',
+            }],
+          },
+        },
+        ref: '1',
+      };
+      ws.send(JSON.stringify(joinMsg));
+      // Ping toutes les 30s pour maintenir la connexion
+      _pingTimer = setInterval(() => {
+        if(ws.readyState === WebSocket.OPEN){
+          ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(Date.now()) }));
+        }
+      }, 30000);
+    };
+    ws.onmessage = (evt) => {
+      try {
+        const msg = JSON.parse(evt.data);
+        // Event de type postgres_changes
+        if(msg.event === 'INSERT' || msg.event === 'UPDATE' || msg.event === 'DELETE'){
+          const rec = msg.payload?.record || msg.payload?.data?.record || msg.payload;
+          if(rec && rec.id === state.sync.recordId){
+            console.log('V6.16: changement cloud détecté via Realtime → pull');
+            // Petit délai pour laisser la DB propager, puis pull silencieux
+            setTimeout(() => silentPullFromCloud().catch(()=>{}), 500);
+          }
+        }
+      } catch(_){
+        // Messages de contrôle Phoenix — ignorés
+      }
+    };
+    ws.onerror = (e) => {
+      console.debug('V6.16: WebSocket Realtime erreur (non fatale, fallback polling)', e);
+    };
+    ws.onclose = () => {
+      console.log('V6.16: WebSocket Realtime fermé — fallback sur polling 30s');
+      if(_pingTimer) clearInterval(_pingTimer);
+      // Reconnexion auto dans 30s
+      setTimeout(() => {
+        if(isCloudConfigured() && isOnline()) startRealtimeSubscription();
+      }, 30000);
+    };
+    _realtimeChannel = ws;
+  } catch(e){
+    console.debug('V6.16: Realtime non disponible, fallback polling', e.message);
+  }
+}
+function stopRealtimeSubscription(){
+  if(_realtimeChannel){
+    try { _realtimeChannel.close(); } catch(_){}
+    _realtimeChannel = null;
+  }
+}
+
+// Initialise TOUS les mécanismes de sync temps réel (appelé depuis finalizeLoad).
+function initRealtimeSync(){
+  if(!isCloudConfigured()){
+    refreshSyncStatusDisplay();
+    return;
+  }
+  // 1. Timer push/pull 5 min (existant) — mais maintenant il PULL aussi
+  if(state.sync?.autoSync){
+    startAutoSyncTimer();
+  }
+  // 2. Timer pull rapide 30s (nouveau)
+  startFastPullTimer();
+  // 3. Subscription Realtime WebSocket (nouveau)
+  startRealtimeSubscription();
+  // 4. Listeners d'événements navigateur (nouveau)
+  setupSyncEventListeners();
+  // 5. Pull initial silencieux après 2s (plus rapide que les 3s existants)
+  setTimeout(() => {
+    silentPullFromCloud().then(pulled => {
+      if(pulled){
+        console.log('V6.16: pull initial réussi');
+      }
+      refreshSyncStatusDisplay();
+    }).catch(()=>{});
+  }, 2000);
+  // 6. Met à jour l'indicateur toutes les 15s (V6.16 : fréquence réduite pour réactivité)
+  setInterval(refreshSyncStatusDisplay, 15000);
+  refreshSyncStatusDisplay();
+}
+
+// Liste des événements navigateur qui déclenchent un pull.
+function setupSyncEventListeners(){
+  if(window._v616SyncListenersAttached) return;
+  window._v616SyncListenersAttached = true;
+  // a) Retour de focus sur la fenêtre → pull
+  window.addEventListener('focus', () => {
+    const now = Date.now();
+    // Throttle 5s entre les pulls sur focus
+    if(now - _lastFocusedAt > 5000){
+      _lastFocusedAt = now;
+      silentPullFromCloud().catch(()=>{});
+    }
+  });
+  // b) Retour de connexion réseau → pull
+  window.addEventListener('online', () => {
+    console.log('V6.16: réseau restauré → pull');
+    updateSyncStatusUI('syncing', '⟳ Sync: reconnexion…');
+    silentPullFromCloud().then(() => refreshSyncStatusDisplay()).catch(()=>{});
+    // Relance aussi le timer rapide et la subscription Realtime
+    startFastPullTimer();
+    startRealtimeSubscription();
+  });
+  // c) Perte de connexion → met à jour l'indicateur
+  window.addEventListener('offline', () => {
+    refreshSyncStatusDisplay();
+    stopRealtimeSubscription();
+  });
+  // d) Visibilité de la page (onglet redevient visible) → pull
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible'){
+      silentPullFromCloud().catch(()=>{});
+    }
+  });
+  console.log('V6.16: listeners de sync temps réel attachés');
+}
+
+// Wrapper public pour déclencher un pull depuis n'importe où dans l'app.
+function checkForUpdates(){
+  if(!isCloudConfigured() || !isOnline()){
+    showSyncToast('ℹ Sync non disponible');
+    return;
+  }
+  updateSyncStatusUI('syncing', '⟳ Sync: vérification…');
+  silentPullFromCloud().then(pulled => {
+    if(pulled){
+      refreshSyncStatusDisplay();
+    } else {
+      updateSyncStatusUI('sync-ok', '✓ Déjà à jour');
+      showSyncToast('✓ Vos données sont à jour');
+      setTimeout(refreshSyncStatusDisplay, 2000);
+    }
+  }).catch(()=>{ refreshSyncStatusDisplay(); });
+}
+// Exposer globalement pour les boutons UI
+window.checkForUpdates = checkForUpdates;
+window.silentPullFromCloud = silentPullFromCloud;
+
+
 function saveCloudConfig(){
   if(!isAdmin()){
     toast('Accès refusé', 'Seuls les administrateurs peuvent configurer la synchro cloud.', 'error');
@@ -10354,5 +10781,6 @@ document.getElementById('loginUsername').addEventListener('keypress', e => { if(
   setTimeout(_backupInit, 8000);
 })();
 </script>
+  <div id="syncToast" class="sync-toast"></div>
 </body>
 </html>
