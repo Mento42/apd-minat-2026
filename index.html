@@ -386,6 +386,123 @@
   max-width:320px;
 }
 .sync-toast.show{opacity:1;transform:translateY(0)}
+
+/* V6.19 : Bouton de rafraîchissement manuel (mobile / tablette) */
+.sync-fab{
+  position:fixed;bottom:20px;right:20px;z-index:9999;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg,#0f5b45 0%,#10b981 100%);
+  color:white;border:none;cursor:pointer;
+  box-shadow:0 6px 20px rgba(15,91,69,0.35),0 2px 6px rgba(0,0,0,0.15);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s ease,box-shadow .2s ease,opacity .2s ease;
+  opacity:0;pointer-events:none;
+  /* Apparaît seulement quand l'utilisateur est connecté */
+}
+.sync-fab.visible{opacity:1;pointer-events:auto}
+.sync-fab:hover{transform:scale(1.08);box-shadow:0 8px 24px rgba(15,91,69,0.45)}
+.sync-fab:active{transform:scale(0.95)}
+.sync-fab.refreshing{
+  background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);
+  box-shadow:0 6px 20px rgba(59,130,246,0.35);
+}
+.sync-fab .fab-icon{
+  font-size:22px;line-height:1;display:inline-block;
+  transition:transform .3s ease;
+}
+.sync-fab.refreshing .fab-icon{
+  animation:fab-spin 1s linear infinite;
+}
+@keyframes fab-spin{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+.sync-fab .fab-badge{
+  position:absolute;top:-2px;right:-2px;
+  width:14px;height:14px;border-radius:50%;
+  background:#facc15;border:2px solid white;
+  display:none;
+}
+.sync-fab.has-update .fab-badge{display:block;animation:fab-pulse 1.5s ease-in-out infinite}
+@keyframes fab-pulse{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.3);opacity:0.6}
+}
+/* Sur desktop (≥1024px), le FAB reste visible mais discret */
+@media(min-width:1024px){
+  .sync-fab{
+    width:44px;height:44px;bottom:16px;right:16px;
+  }
+  .sync-fab.visible{opacity:0.55}
+  .sync-fab.visible:hover{opacity:1}
+}
+/* Le statut sync dans la sidebar devient cliquable */
+.sidebar-sync-status{
+  cursor:pointer;user-select:none;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.sidebar-sync-status:hover{
+  background:rgba(167,243,208,0.15) !important;
+  border-color:rgba(167,243,208,0.35) !important;
+}
+.sidebar-sync-status:active{transform:scale(0.98)}
+.sidebar-refresh-btn{
+  margin-top:6px;width:100%;padding:7px 10px;border-radius:6px;
+  background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);
+  color:#a7f3d0;cursor:pointer;font-size:11px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .2s ease;
+}
+.sidebar-refresh-btn:hover{
+  background:rgba(16,185,129,0.3);border-color:rgba(16,185,129,0.6);
+  color:#d1fae5;
+}
+.sidebar-refresh-btn:active{transform:scale(0.98)}
+.sidebar-refresh-btn.refreshing{
+  background:rgba(59,130,246,0.25);border-color:rgba(59,130,246,0.5);color:#bfdbfe;
+  pointer-events:none;
+}
+.sidebar-refresh-btn .refresh-icon{
+  display:inline-block;transition:transform .3s ease;
+}
+.sidebar-refresh-btn.refreshing .refresh-icon{
+  animation:fab-spin 1s linear infinite;
+}
+/* Pull-to-refresh indicator (mobile) */
+.ptr-indicator{
+  position:fixed;top:0;left:0;right:0;height:0;
+  background:linear-gradient(180deg,rgba(16,185,129,0.95) 0%,rgba(16,185,129,0.0) 100%);
+  z-index:9998;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  transition:height .2s ease;
+  pointer-events:none;
+}
+.ptr-indicator .ptr-text{
+  color:white;font-size:13px;font-weight:600;
+  opacity:0;transition:opacity .2s ease;
+  display:flex;align-items:center;gap:6px;
+}
+.ptr-indicator.active{height:60px}
+.ptr-indicator.active .ptr-text{opacity:1}
+.ptr-indicator.active .ptr-icon{
+  animation:fab-spin 1s linear infinite;
+  display:inline-block;
+}
+/* Banner "data stale" — apparaît si les données sont anciennes */
+.data-stale-banner{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:#f59e0b;color:white;padding:8px 16px;border-radius:20px;
+  font-size:12px;font-weight:600;
+  box-shadow:0 4px 12px rgba(245,158,11,0.35);
+  z-index:9997;display:none;align-items:center;gap:6px;
+  cursor:pointer;
+}
+.data-stale-banner.show{display:flex;animation:slide-up .3s ease}
+@keyframes slide-up{
+  from{opacity:0;transform:translateX(-50%) translateY(10px)}
+  to{opacity:1;transform:translateX(-50%) translateY(0)}
+}
+
 </style>
 </head>
 <body>
@@ -448,11 +565,12 @@
       <nav id="navMenu"></nav>
       <div class="sidebar-footer">
         <div id="sidebarUser">Connecté: <strong>admin</strong></div>
-        <div id="sidebarSyncStatus" class="sidebar-sync-status sync-offline"><span class="sync-dot"></span><span id="syncStatusText">Sync: en attente…</span></div>
+        <div id="sidebarSyncStatus" class="sidebar-sync-status sync-offline" onclick="manualRefreshData()" title="Toucher pour rafraîchir"><span class="sync-dot"></span><span id="syncStatusText">Sync: en attente…</span></div>
+        <button id="sidebarRefreshBtn" class="sidebar-refresh-btn" onclick="manualRefreshData()" title="Rafraîchir les données maintenant"><span class="refresh-icon">⟳</span><span>Rafraîchir les données</span></button>
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.16</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.19</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -2458,6 +2576,7 @@ function finalizeLoad(){
   try {
     if(typeof initRealtimeSync === 'function'){
       initRealtimeSync();
+  initMobileRefresh();
     }
   } catch(e){
     console.warn('V6.16 realtime init skipped:', e);
@@ -3263,6 +3382,8 @@ function doLogin(){
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.getElementById('loginPassword').value = ''; // sécurité : vide le champ password
+  // V6.19 : affiche le bouton flottant de rafraîchissement (mobile/tablette)
+  if(typeof showRefreshFab === 'function') showRefreshFab(true);
   updateSidebarUserDisplay();
   renderNav();
   // 📋 JOURNAL D'AUDIT (Task 46) : enregistre la connexion
@@ -3377,6 +3498,7 @@ function hideLoadingIndicator(){
   if(loader) loader.style.display = 'none';
 }
 function doLogout(){
+  showRefreshFab(false);
   // 📋 JOURNAL D'AUDIT (Task 46) : enregistre la déconnexion avant de vider la session
   if(state.currentUser){
     logAudit('logout', 'auth', `Déconnexion de ${state.currentUser.username}`, 'Fin de session de travail');
@@ -8937,6 +9059,253 @@ function startFastPullTimer(){
   }, 30000);
   console.log('V6.16: fast pull timer démarré (30s)');
 }
+
+// ════════════════════════════════════════════════════════════════
+// V6.19 : RAFRAÎCHISSEMENT MANUEL POUR MOBILE / TABLETTE
+// ════════════════════════════════════════════════════════════════
+let _manualRefreshInProgress = false;
+let _lastUserActivityAt = Date.now();
+let _idleRefreshTimer = null;
+let _staleBannerTimer = null;
+
+// Rafraîchit manuellement les données depuis le cloud.
+// - Affiche un retour visuel clair (FAB qui tourne + toast).
+// - Bypass le throttle 10s de silentPullFromCloud.
+// - Si offline : toast d'avertissement.
+// - Si pas configuré : propose un reload navigateur.
+// - Si déjà à jour : toast "Déjà à jour".
+// - Si données mises à jour : toast "Données mises à jour" (déjà géré par silentPull).
+async function manualRefreshData(){
+  if(_manualRefreshInProgress) return;
+  // Marque l'activité utilisateur
+  _lastUserActivityAt = Date.now();
+  hideStaleBanner();
+
+  // Vérifie la connexion
+  if(typeof isOnline === 'function' && !isOnline()){
+    if(typeof toast === 'function'){
+      toast('Hors-ligne', 'Pas de connexion internet. Reconnectez-vous puis réessayez.', 'error');
+    } else {
+      showSyncToast('⚠ Hors-ligne — pas de connexion');
+    }
+    return;
+  }
+
+  // Vérifie la config cloud
+  if(typeof isCloudConfigured === 'function' && !isCloudConfigured()){
+    // Pas de cloud configuré → on propose un reload navigateur
+    if(typeof toast === 'function'){
+      toast('Sync non configurée', 'Voulez-vous recharger la page ?', 'info');
+    }
+    setTimeout(() => {
+      if(confirm('La synchronisation cloud n\'est pas configurée.\n\nVoulez-vous recharger la page pour récupérer les dernières données embarquées ?')){
+        window.location.reload();
+      }
+    }, 500);
+    return;
+  }
+
+  _manualRefreshInProgress = true;
+  // Anime les boutons
+  setRefreshButtonsState(true);
+
+  try {
+    // Bypass le throttle de silentPullFromCloud
+    if(typeof _lastPullCheck !== 'undefined'){
+      _lastPullCheck = 0;
+    }
+    const pulled = await silentPullFromCloud();
+    if(pulled){
+      // Données effectivement mises à jour — silentPull a déjà affiché le toast
+      console.log('V6.19: manualRefresh → données mises à jour');
+    } else {
+      // Aucune mise à jour côté cloud
+      if(typeof toast === 'function'){
+        toast('Déjà à jour', 'Vos données sont synchronisées avec le cloud.', 'success');
+      } else {
+        showSyncToast('✓ Déjà à jour');
+      }
+      // Met quand même à jour l'affichage du statut
+      if(typeof refreshSyncStatusDisplay === 'function'){
+        refreshSyncStatusDisplay();
+      }
+    }
+  } catch(e){
+    console.error('V6.19: manualRefresh error', e);
+    if(typeof toast === 'function'){
+      toast('Échec du rafraîchissement', e.message || String(e), 'error');
+    } else {
+      showSyncToast('⚠ Échec du rafraîchissement');
+    }
+  } finally {
+    _manualRefreshInProgress = false;
+    setRefreshButtonsState(false);
+    // Marque la dernière activité
+    _lastUserActivityAt = Date.now();
+  }
+}
+
+// Met à jour l'état visuel des boutons de rafraîchissement (FAB + sidebar).
+function setRefreshButtonsState(refreshing){
+  const fab = document.getElementById('syncFab');
+  const sb = document.getElementById('sidebarRefreshBtn');
+  if(fab){
+    if(refreshing) fab.classList.add('refreshing');
+    else fab.classList.remove('refreshing');
+  }
+  if(sb){
+    if(refreshing) sb.classList.add('refreshing');
+    else sb.classList.remove('refreshing');
+  }
+}
+
+// Affiche / masque le FAB selon l'état de connexion (login).
+function showRefreshFab(show){
+  const fab = document.getElementById('syncFab');
+  if(!fab) return;
+  if(show) fab.classList.add('visible');
+  else fab.classList.remove('visible');
+}
+
+// Affiche le banner "données anciennes" si la dernière sync > 5 min.
+function showStaleBanner(msg){
+  const b = document.getElementById('dataStaleBanner');
+  const t = document.getElementById('staleBannerText');
+  if(!b || !t) return;
+  t.textContent = msg || '⏰ Données anciennes — toucher pour rafraîchir';
+  b.classList.add('show');
+}
+function hideStaleBanner(){
+  const b = document.getElementById('dataStaleBanner');
+  if(b) b.classList.remove('show');
+}
+
+// Vérifie périodiquement si les données sont "stale" (anciennes).
+// Si oui, affiche le banner + badge sur le FAB.
+function checkStaleData(){
+  if(!state || !state.sync) return;
+  if(!isCloudConfigured()) return;
+  const lastSync = state.sync.lastSyncAt || 0;
+  if(!lastSync) return;  // jamais sync — ne pas alarmer
+  const elapsed = Date.now() - lastSync;
+  const FIVE_MIN = 5 * 60 * 1000;
+  if(elapsed > FIVE_MIN){
+    const min = Math.floor(elapsed / 60000);
+    showStaleBanner('⏰ Dernière sync: il y a ' + min + ' min — toucher pour rafraîchir');
+    const fab = document.getElementById('syncFab');
+    if(fab) fab.classList.add('has-update');
+  } else {
+    hideStaleBanner();
+    const fab = document.getElementById('syncFab');
+    if(fab) fab.classList.remove('has-update');
+  }
+}
+
+// Démarre le timer qui vérifie les données stale toutes les 60s.
+function startStaleDetector(){
+  if(_staleBannerTimer) clearInterval(_staleBannerTimer);
+  _staleBannerTimer = setInterval(() => {
+    checkStaleData();
+  }, 60000);
+  // Vérifie immédiatement
+  setTimeout(checkStaleData, 2000);
+}
+
+// Idle refresh : si l'utilisateur n'a rien fait pendant 2 min mais que l'onglet
+// est visible, on déclenche un pull silencieux (utile sur mobile où le polling 30s
+// peut être suspendu par le navigateur en arrière-plan).
+function startIdleRefresh(){
+  if(_idleRefreshTimer) clearInterval(_idleRefreshTimer);
+  _idleRefreshTimer = setInterval(() => {
+    if(document.hidden) return;  // onglet non visible — ne rien faire
+    if(!isCloudConfigured()) return;
+    if(!isOnline()) return;
+    const idleTime = Date.now() - _lastUserActivityAt;
+    const TWO_MIN = 2 * 60 * 1000;
+    if(idleTime > TWO_MIN){
+      console.log('V6.19: idle refresh — pull silencieux');
+      if(typeof _lastPullCheck !== 'undefined') _lastPullCheck = 0;
+      silentPullFromCloud().catch(()=>{});
+      _lastUserActivityAt = Date.now();  // reset pour éviter les boucles
+    }
+  }, 30000);  // vérifie toutes les 30s
+}
+
+// Tracking de l'activité utilisateur (clavier, souris, touch).
+function setupUserActivityTracking(){
+  const events = ['mousedown','touchstart','keydown','scroll','click'];
+  events.forEach(evt => {
+    document.addEventListener(evt, () => {
+      _lastUserActivityAt = Date.now();
+      // Masque le banner stale si l'utilisateur est actif
+      const b = document.getElementById('dataStaleBanner');
+      if(b && b.classList.contains('show')){
+        // Ne masque que si on vient juste de rafraîchir
+      }
+    }, {passive:true});
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// V6.19 : PULL-TO-REFRESH (mobile uniquement)
+// Détecte un swipe vers le bas quand le scroll est en haut de page.
+// ════════════════════════════════════════════════════════════════
+function setupPullToRefresh(){
+  // Uniquement sur écran tactile
+  if(!('ontouchstart' in window)) return;
+
+  let _ptrStartY = 0;
+  let _ptrPulling = false;
+  const indicator = document.getElementById('ptrIndicator');
+  if(!indicator) return;
+
+  document.addEventListener('touchstart', (e) => {
+    // Seulement si on est en haut de page
+    if(window.scrollY <= 0 && document.body.scrollTop <= 0){
+      _ptrStartY = e.touches[0].clientY;
+      _ptrPulling = true;
+    } else {
+      _ptrPulling = false;
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchmove', (e) => {
+    if(!_ptrPulling) return;
+    const dy = e.touches[0].clientY - _ptrStartY;
+    if(dy > 60){
+      indicator.classList.add('active');
+    } else if(dy > 0){
+      indicator.classList.remove('active');
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', (e) => {
+    if(!_ptrPulling) return;
+    _ptrPulling = false;
+    if(indicator.classList.contains('active')){
+      indicator.classList.remove('active');
+      // Déclenche le refresh
+      manualRefreshData();
+    }
+  }, {passive:true});
+}
+
+// ════════════════════════════════════════════════════════════════
+// V6.19 : INITIALISATION — appelée depuis finalizeLoad()
+// ════════════════════════════════════════════════════════════════
+function initMobileRefresh(){
+  // NE PAS afficher le FAB ici — il sera affiché après connexion réussie (doLogin).
+  // Active le pull-to-refresh sur mobile
+  setupPullToRefresh();
+  // Tracking activité
+  setupUserActivityTracking();
+  // Démarre les détecteurs (inactifs tant qu'utilisateur non connecté)
+  startStaleDetector();
+  startIdleRefresh();
+  console.log('V6.19: mobile refresh initialized — pull-to-refresh actif, FAB sera visible après login');
+}
+
+
 function stopFastPullTimer(){
   if(_fastPullTimer){
     clearInterval(_fastPullTimer);
@@ -10883,5 +11252,16 @@ document.getElementById('loginUsername').addEventListener('keypress', e => { if(
 })();
 </script>
   <div id="syncToast" class="sync-toast"></div>
+
+<!-- V6.19 : Pull-to-refresh indicator (mobile) -->
+<div id="ptrIndicator" class="ptr-indicator"><span class="ptr-text"><span class="ptr-icon">⟳</span> Relâcher pour rafraîchir</span></div>
+<!-- V6.19 : Banner "données anciennes" -->
+<div id="dataStaleBanner" class="data-stale-banner" onclick="manualRefreshData()"><span>⏰</span><span id="staleBannerText">Données anciennes — toucher pour rafraîchir</span></div>
+<!-- V6.19 : Bouton flottant de rafraîchissement manuel -->
+<button id="syncFab" class="sync-fab" onclick="manualRefreshData()" title="Rafraîchir les données" aria-label="Rafraîchir les données">
+  <span class="fab-icon">⟳</span>
+  <span class="fab-badge"></span>
+</button>
+
 </body>
 </html>
