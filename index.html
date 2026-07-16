@@ -387,7 +387,7 @@
 }
 .sync-toast.show{opacity:1;transform:translateY(0)}
 
-/* V6.19 : Bouton de rafraîchissement manuel (mobile / tablette) */
+/* V6.20 : Bouton de rafraîchissement manuel (mobile / tablette) */
 .sync-fab{
   position:fixed;bottom:20px;right:20px;z-index:9999;
   width:54px;height:54px;border-radius:50%;
@@ -2072,6 +2072,14 @@ const DEFAULT_USERS = [
 ];
 
 // ════════════════════════════════════════════════════════════════
+// 📨 V6.20 : Email de l'administrateur technique pour les demandes
+//  de réinitialisation de mot de passe via mailto:.
+//  ⚠️ À PERSONNALISER : remplacez l'email ci-dessous par celui de
+//     l'administrateur technique réel de votre Amicale.
+// ════════════════════════════════════════════════════════════════
+const ADMIN_CONTACT_EMAIL = 'administrateur.apdminat@gmail.com';
+
+// ════════════════════════════════════════════════════════════════
 // 🛡️ V6.17 (15 juillet 2026) : Correction du bug de persistance des mots de passe
 //  • loadState() préserve TOUJOURS les users locaux (MDP personnalisés)
 //  • applyPublishedData() ne remplace PLUS state.users par data.users (sans MDP)
@@ -3325,7 +3333,7 @@ function publishDataForMembers(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// V6.19 : ASSISTANT « MOT DE PASSE OUBLIÉ »
+// V6.20 : ASSISTANT « MOT DE PASSE OUBLIÉ »
 // Ouvre un modal avec les étapes de récupération selon le profil.
 // ════════════════════════════════════════════════════════════════
 function showForgotPasswordWizard(){
@@ -3337,6 +3345,7 @@ function showForgotPasswordWizard(){
     opt1: 'Je suis <b>membre</b> de l\'Amicale (accès consultation)',
     opt2: 'Je suis <b>administrateur</b> (Bureau Exécutif) et j\'ai perdu mon mot de passe',
     opt3: 'Le compte <code>admin</code> technique est aussi bloqué (cas extrême)',
+    opt4: '📨 <b>Demander un nouveau mot de passe par email</b> (recommandé)',
     step1Title: '👨‍💼 Cas 1 — Membre de l\'Amicale',
     step1Body: 'Le compte <code>membre</code> est <b>commun à tous les membres</b> de l\'Amicale. Ses identifiants sont :<br><br><div style="background:#f0fdf4;border:1px solid #86efac;padding:10px;border-radius:8px;text-align:center;font-size:14px;font-weight:bold;color:#166534">👤 <code>membre</code> &nbsp;&nbsp;/&nbsp;&nbsp; 🔑 <code>apd2025</code></div><br>Si ce mot de passe ne fonctionne pas, c\'est qu\'un administrateur l\'a modifié. <b>Contactez le Bureau Exécutif</b> (Président, Secrétaire Général, Trésorier ou Censeur) pour obtenir le mot de passe en vigueur.',
     step2Title: '🔐 Cas 2 — Administrateur (mot de passe perdu)',
@@ -3352,6 +3361,7 @@ function showForgotPasswordWizard(){
     opt1: 'I am an <b>ordinary member</b> of the Association (read-only access)',
     opt2: 'I am an <b>administrator</b> (Executive Board) and lost my password',
     opt3: 'The technical <code>admin</code> account is also blocked (extreme case)',
+    opt4: '📨 <b>Request a new password by email</b> (recommended)',
     step1Title: '👨‍💼 Case 1 — Association member',
     step1Body: 'The <code>membre</code> account is <b>shared by all members</b>. Credentials are:<br><br><div style="background:#f0fdf4;border:1px solid #86efac;padding:10px;border-radius:8px;text-align:center;font-size:14px;font-weight:bold;color:#166534">👤 <code>membre</code> &nbsp;&nbsp;/&nbsp;&nbsp; 🔑 <code>apd2025</code></div><br>If this password doesn\'t work, an administrator changed it. <b>Contact the Executive Board</b> (President, Secretary General, Treasurer or Censor) to get the current password.',
     step2Title: '🔐 Case 2 — Administrator (lost password)',
@@ -3369,6 +3379,7 @@ function showForgotPasswordWizard(){
       <button onclick="showForgotPasswordStep(1)" style="text-align:left;padding:10px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;cursor:pointer;font-size:13px;color:#0f5b45;transition:all .2s" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">${t.opt1}</button>
       <button onclick="showForgotPasswordStep(2)" style="text-align:left;padding:10px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;cursor:pointer;font-size:13px;color:#92400e;transition:all .2s" onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">${t.opt2}</button>
       <button onclick="showForgotPasswordStep(3)" style="text-align:left;padding:10px 12px;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;cursor:pointer;font-size:13px;color:#991b1b;transition:all .2s" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">${t.opt3}</button>
+      <button onclick="showForgotPasswordEmailForm()" style="text-align:left;padding:10px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;cursor:pointer;font-size:13px;color:#1e40af;transition:all .2s" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'">${t.opt4}</button>
     </div>
     <div id="fpwStepContent" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;font-size:13px;line-height:1.6;color:#1e293b"></div>
     <hr style="margin:16px 0;border:none;border-top:1px solid #e2e8f0">
@@ -3403,6 +3414,239 @@ function showForgotPasswordStep(step){
   // Scroll doux vers le contenu
   setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 }
+
+
+// ════════════════════════════════════════════════════════════════
+// 📨 V6.20 : FORMULAIRE "DEMANDER UN NOUVEAU MOT DE PASSE PAR EMAIL"
+//  Affiche un sous-formulaire dans le wizard pour saisir :
+//    - type de compte (membre / admin)
+//    - nom d'utilisateur (pour admin) ou confirmation (pour membre)
+//    - email de contact (pour que l'admin puisse répondre)
+//  Puis génère un nouveau MDP temporaire et ouvre un mailto: pré-rempli.
+// ════════════════════════════════════════════════════════════════
+function showForgotPasswordEmailForm(){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const L = isFr ? {
+    title: '📨 Demande de nouveau mot de passe par email',
+    intro: 'Remplissez le formulaire ci-dessous. Un <b>nouveau mot de passe temporaire</b> sera généré automatiquement et un email pré-rempli s\'ouvrira dans votre client mail à destination de l\'<b>administrateur technique</b>.',
+    accountType: 'Type de compte',
+    member: 'Membre (compte commun)',
+    admin: 'Administrateur (Bureau Exécutif)',
+    usernameLabel: 'Nom d\'utilisateur',
+    usernamePlaceholder: 'ex: president, secretaire, tresorier, censeur',
+    memberNote: 'Le compte <code>membre</code> est partagé par tous les membres. Le nouveau mot de passe sera appliqué immédiatement et tous les membres devront utiliser ce nouveau mot de passe.',
+    adminNote: 'Pour des raisons de sécurité, le mot de passe <b>ne sera pas appliqué automatiquement</b>. L\'administrateur technique recevra la demande par email et devra la traiter via <code>admin / admin</code> → Paramètres → Gestion des utilisateurs.',
+    emailLabel: 'Votre email de contact',
+    emailPlaceholder: 'votre.email@exemple.com',
+    emailHint: 'Pour que l\'administrateur puisse vous répondre avec le nouveau mot de passe.',
+    submitBtn: '📨 Générer et envoyer la demande',
+    cancelBtn: 'Annuler',
+    warnMember: '⚠️ Attention : cette action modifie immédiatement le mot de passe du compte <code>membre</code>. Tous les membres de l\'Amicale utiliseront ce nouveau mot de passe. Pensez à communiquer le nouveau mot de passe à tous les membres.',
+    warnAdmin: '💡 Pour des raisons de sécurité, le mot de passe administrateur n\'est jamais modifié sans validation humaine.',
+    successTitle: '✅ Demande préparée',
+    successBodyMember: '<p>Un <b>nouveau mot de passe</b> a été généré pour le compte <code>membre</code> :</p><div style="background:#f0fdf4;border:2px solid #16a34a;padding:14px;border-radius:8px;text-align:center;margin:10px 0"><div style="font-size:12px;color:#64748b">Nouveau mot de passe membre</div><div style="font-size:20px;font-weight:bold;color:#166534;letter-spacing:2px" id="newPwdDisplay">%PWD%</div><button onclick="navigator.clipboard.writeText(document.getElementById(\'newPwdDisplay\').textContent);toast(\'Copié\',\'Le mot de passe a été copié dans le presse-papier.\',\'success\')" style="margin-top:8px;padding:6px 14px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">📋 Copier</button></div><p>Un email pré-rempli a été ouvert dans votre client mail à destination de <b>%ADMIN_EMAIL%</b>. <b>Cliquez sur "Envoyer"</b> dans votre client mail pour transmettre la demande à l\'administrateur technique.</p><p style="font-size:12px;color:#64748b">📌 Pensez à <b>communiquer le nouveau mot de passe</b> à tous les membres de l\'Amicale une fois la demande confirmée.</p>',
+    successBodyAdmin: '<p>Un email pré-rempli a été ouvert dans votre client mail à destination de <b>%ADMIN_EMAIL%</b>. <b>Cliquez sur "Envoyer"</b> dans votre client mail pour transmettre la demande à l\'administrateur technique.</p><p>L\'administrateur traitera votre demande et vous répondra à l\'adresse : <b>%USER_EMAIL%</b>.</p><div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:10px;border-radius:6px;margin-top:10px;font-size:13px">⏱️ <b>Délai estimé</b> : sous 24-48h ouvrées. Si urgence, contactez directement un membre du Bureau Exécutif.</div>',
+    errUsername: 'Veuillez saisir un nom d\'utilisateur valide.',
+    errEmail: 'Veuillez saisir une adresse email valide.',
+    errUnknownUser: 'Ce nom d\'utilisateur n\'existe pas. Comptes valides : admin, president, secretaire, tresorier, censeur, membre.',
+    errAdminLocked: 'Le compte <code>admin</code> technique ne peut pas faire l\'objet d\'une demande par email (c\'est le compte de secours). Utilisez plutôt le <b>Cas 3</b> du wizard.'
+  } : {
+    title: '📨 Request new password by email',
+    intro: 'Fill in the form below. A <b>new temporary password</b> will be automatically generated and a pre-filled email will open in your mail client, addressed to the <b>technical administrator</b>.',
+    accountType: 'Account type',
+    member: 'Member (shared account)',
+    admin: 'Administrator (Executive Board)',
+    usernameLabel: 'Username',
+    usernamePlaceholder: 'e.g: president, secretaire, tresorier, censeur',
+    memberNote: 'The <code>membre</code> account is shared by all members. The new password will be applied immediately and all members will need to use this new password.',
+    adminNote: 'For security reasons, the password will <b>not</b> be applied automatically. The technical administrator will receive the request by email and must process it via <code>admin / admin</code> → Settings → User management.',
+    emailLabel: 'Your contact email',
+    emailPlaceholder: 'your.email@example.com',
+    emailHint: 'So the administrator can reply with the new password.',
+    submitBtn: '📨 Generate and send request',
+    cancelBtn: 'Cancel',
+    warnMember: '⚠️ Warning: this action immediately modifies the <code>member</code> account password. All Association members will use this new password. Make sure to communicate the new password to all members.',
+    warnAdmin: '💡 For security reasons, the administrator password is never modified without human validation.',
+    successTitle: '✅ Request prepared',
+    successBodyMember: '<p>A <b>new password</b> has been generated for the <code>member</code> account:</p><div style="background:#f0fdf4;border:2px solid #16a34a;padding:14px;border-radius:8px;text-align:center;margin:10px 0"><div style="font-size:12px;color:#64748b">New member password</div><div style="font-size:20px;font-weight:bold;color:#166534;letter-spacing:2px" id="newPwdDisplay">%PWD%</div><button onclick="navigator.clipboard.writeText(document.getElementById(\'newPwdDisplay\').textContent);toast(\'Copied\',\'Password copied to clipboard.\',\'success\')" style="margin-top:8px;padding:6px 14px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">📋 Copy</button></div><p>A pre-filled email has been opened in your mail client to <b>%ADMIN_EMAIL%</b>. <b>Click "Send"</b> in your mail client to forward the request to the technical administrator.</p><p style="font-size:12px;color:#64748b">📌 Make sure to <b>communicate the new password</b> to all Association members once the request is confirmed.</p>',
+    successBodyAdmin: '<p>A pre-filled email has been opened in your mail client to <b>%ADMIN_EMAIL%</b>. <b>Click "Send"</b> in your mail client to forward the request to the technical administrator.</p><p>The administrator will process your request and reply to: <b>%USER_EMAIL%</b>.</p><div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:10px;border-radius:6px;margin-top:10px;font-size:13px">⏱️ <b>Estimated delay</b>: within 24-48 business hours. If urgent, contact a member of the Executive Board directly.</div>',
+    errUsername: 'Please enter a valid username.',
+    errEmail: 'Please enter a valid email address.',
+    errUnknownUser: 'This username does not exist. Valid accounts: admin, president, secretaire, tresorier, censeur, membre.',
+    errAdminLocked: 'The technical <code>admin</code> account cannot be requested by email (it is the fallback account). Use <b>Case 3</b> of the wizard instead.'
+  };
+
+  const body = `
+    <p style="margin:0 0 12px;color:#475569;font-size:13px;line-height:1.6">${L.intro}</p>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;font-size:13px;line-height:1.6">
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#1e293b">${L.accountType}</label>
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <label style="flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;background:white;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-size:13px">
+          <input type="radio" name="fpwAccountType" value="membre" checked onchange="document.getElementById('fpwUsernameWrap').style.display='none';document.getElementById('fpwMemberNote').style.display='block';document.getElementById('fpwAdminNote').style.display='none'">
+          ${L.member}
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:6px;padding:8px 10px;background:white;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-size:13px">
+          <input type="radio" name="fpwAccountType" value="admin" onchange="document.getElementById('fpwUsernameWrap').style.display='block';document.getElementById('fpwMemberNote').style.display='none';document.getElementById('fpwAdminNote').style.display='block'">
+          ${L.admin}
+        </label>
+      </div>
+
+      <div id="fpwUsernameWrap" style="display:none;margin-bottom:12px">
+        <label style="display:block;font-weight:600;margin-bottom:6px;color:#1e293b">${L.usernameLabel}</label>
+        <input type="text" id="fpwUsername" placeholder="${L.usernamePlaceholder}" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px" autocomplete="off">
+      </div>
+
+      <div id="fpwMemberNote" style="background:#f0fdf4;border-left:4px solid #16a34a;padding:10px;border-radius:6px;margin-bottom:12px;font-size:12px;color:#166534">${L.memberNote}</div>
+      <div id="fpwAdminNote" style="display:none;background:#fef3c7;border-left:4px solid #f59e0b;padding:10px;border-radius:6px;margin-bottom:12px;font-size:12px;color:#92400e">${L.adminNote}</div>
+
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#1e293b">${L.emailLabel}</label>
+      <input type="email" id="fpwUserEmail" placeholder="${L.emailPlaceholder}" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;margin-bottom:4px" autocomplete="email">
+      <div style="font-size:11px;color:#64748b;margin-bottom:12px">${L.emailHint}</div>
+
+      <div id="fpwError" style="display:none;background:#fee2e2;border-left:4px solid #dc2626;padding:8px 10px;border-radius:6px;margin-bottom:12px;font-size:12px;color:#991b1b"></div>
+    </div>
+  `;
+  const footer = `
+    <button class="btn btn-ghost" onclick="showForgotPasswordWizard()" style="width:auto;padding:8px 16px">${L.cancelBtn}</button>
+    <button class="btn" onclick="sendPasswordRecoveryEmail()" style="width:auto;padding:8px 16px;background:#1e40af;color:white">${L.submitBtn}</button>
+  `;
+  openModal(L.title, body, footer, 'large');
+}
+
+// Génère un mot de passe temporaire aléatoire (10 caractères alphanumériques)
+function generateTempPassword(){
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sans I,L,O,0,1 pour éviter confusion
+  let pwd = 'apd'; // préfixe mnémonique
+  for(let i=0; i<7; i++){
+    pwd += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pwd;
+}
+
+// Traite le formulaire : valide, génère un MDP, ouvre mailto:, applique localement si membre
+function sendPasswordRecoveryEmail(){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const L = isFr ? {
+    errUsername: 'Veuillez saisir un nom d\'utilisateur valide.',
+    errEmail: 'Veuillez saisir une adresse email valide.',
+    errUnknownUser: 'Ce nom d\'utilisateur n\'existe pas. Comptes valides : admin, president, secretaire, tresorier, censeur, membre.',
+    errAdminLocked: 'Le compte <code>admin</code> technique ne peut pas faire l\'objet d\'une demande par email (c\'est le compte de secours). Utilisez plutôt le <b>Cas 3</b> du wizard.',
+    successTitle: '✅ Demande préparée',
+    successBodyMember: '<p>Un <b>nouveau mot de passe</b> a été généré pour le compte <code>membre</code> :</p><div style="background:#f0fdf4;border:2px solid #16a34a;padding:14px;border-radius:8px;text-align:center;margin:10px 0"><div style="font-size:12px;color:#64748b">Nouveau mot de passe membre</div><div style="font-size:20px;font-weight:bold;color:#166534;letter-spacing:2px" id="newPwdDisplay">%PWD%</div><button onclick="navigator.clipboard.writeText(document.getElementById(\'newPwdDisplay\').textContent);toast(\'Copié\',\'Le mot de passe a été copié dans le presse-papier.\',\'success\')" style="margin-top:8px;padding:6px 14px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">📋 Copier</button></div><p>Un email pré-rempli a été ouvert dans votre client mail à destination de <b>%ADMIN_EMAIL%</b>. <b>Cliquez sur "Envoyer"</b> dans votre client mail pour transmettre la demande à l\'administrateur technique.</p><p style="font-size:12px;color:#64748b">📌 Pensez à <b>communiquer le nouveau mot de passe</b> à tous les membres de l\'Amicale une fois la demande confirmée.</p>',
+    successBodyAdmin: '<p>Un email pré-rempli a été ouvert dans votre client mail à destination de <b>%ADMIN_EMAIL%</b>. <b>Cliquez sur "Envoyer"</b> dans votre client mail pour transmettre la demande à l\'administrateur technique.</p><p>L\'administrateur traitera votre demande et vous répondra à l\'adresse : <b>%USER_EMAIL%</b>.</p><div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:10px;border-radius:6px;margin-top:10px;font-size:13px">⏱️ <b>Délai estimé</b> : sous 24-48h ouvrées. Si urgence, contactez directement un membre du Bureau Exécutif.</div>',
+    mailtoFailed: 'Impossible d\'ouvrir votre client mail. Voici les informations à transmettre manuellement à l\'administrateur :',
+    closeBtn: 'Fermer',
+    emailSubject: 'Demande de réinitialisation de mot de passe - APD-MINAT',
+    emailBody: 'Bonjour,\n\nUne demande de réinitialisation de mot de passe a été effectuée depuis l\'application APD-MINAT.\n\nDÉTAILS DE LA DEMANDE\n- Type de compte : %ACCOUNT_TYPE%\n- Nom d\'utilisateur : %USERNAME%\n- Date : %DATE%\n- Email du demandeur : %USER_EMAIL%\n\nNOUVEAU MOT DE PASSE GÉNÉRÉ\n%NEW_PASSWORD%\n\nACTIONS REQUISES\n- Pour un compte MEMBRE : le mot de passe a été appliqué localement. Veuillez le communiquer au demandeur et à tous les membres de l\'Amicale.\n- Pour un compte ADMINISTRATEUR : veuillez vous connecter avec admin/admin, aller dans Menu → Paramètres → Gestion des utilisateurs, et réinitialiser le mot de passe du compte indiqué.\n\nSi cette demande semble frauduleuse, ignorez cet email.\n\nCordialement,\nL\'application APD-MINAT'
+  } : {
+    errUsername: 'Please enter a valid username.',
+    errEmail: 'Please enter a valid email address.',
+    errUnknownUser: 'This username does not exist. Valid accounts: admin, president, secretaire, tresorier, censeur, membre.',
+    errAdminLocked: 'The technical <code>admin</code> account cannot be requested by email (it is the fallback account). Use <b>Case 3</b> of the wizard instead.',
+    successTitle: '✅ Request prepared',
+    successBodyMember: '<p>A <b>new password</b> has been generated for the <code>member</code> account:</p><div style="background:#f0fdf4;border:2px solid #16a34a;padding:14px;border-radius:8px;text-align:center;margin:10px 0"><div style="font-size:12px;color:#64748b">New member password</div><div style="font-size:20px;font-weight:bold;color:#166534;letter-spacing:2px" id="newPwdDisplay">%PWD%</div><button onclick="navigator.clipboard.writeText(document.getElementById(\'newPwdDisplay\').textContent);toast(\'Copied\',\'Password copied to clipboard.\',\'success\')" style="margin-top:8px;padding:6px 14px;background:#16a34a;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">📋 Copy</button></div><p>A pre-filled email has been opened in your mail client to <b>%ADMIN_EMAIL%</b>. <b>Click "Send"</b> in your mail client to forward the request to the technical administrator.</p><p style="font-size:12px;color:#64748b">📌 Make sure to <b>communicate the new password</b> to all Association members once the request is confirmed.</p>',
+    successBodyAdmin: '<p>A pre-filled email has been opened in your mail client to <b>%ADMIN_EMAIL%</b>. <b>Click "Send"</b> in your mail client to forward the request to the technical administrator.</p><p>The administrator will process your request and reply to: <b>%USER_EMAIL%</b>.</p><div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:10px;border-radius:6px;margin-top:10px;font-size:13px">⏱️ <b>Estimated delay</b>: within 24-48 business hours. If urgent, contact a member of the Executive Board directly.</div>',
+    mailtoFailed: 'Unable to open your mail client. Here is the information to forward manually to the administrator:',
+    closeBtn: 'Close',
+    emailSubject: 'Password reset request - APD-MINAT',
+    emailBody: 'Hello,\n\nA password reset request has been made from the APD-MINAT application.\n\nREQUEST DETAILS\n- Account type: %ACCOUNT_TYPE%\n- Username: %USERNAME%\n- Date: %DATE%\n- Requester email: %USER_EMAIL%\n\nNEW GENERATED PASSWORD\n%NEW_PASSWORD%\n\nREQUIRED ACTIONS\n- For a MEMBER account: the password has been applied locally. Please communicate it to the requester and to all Association members.\n- For an ADMINISTRATOR account: please sign in with admin/admin, go to Menu → Settings → User management, and reset the indicated account password.\n\nIf this request seems fraudulent, please ignore this email.\n\nBest regards,\nThe APD-MINAT application'
+  };
+
+  const errEl = document.getElementById('fpwError');
+  const showErr = (msg) => {
+    if(!errEl) return;
+    errEl.innerHTML = msg;
+    errEl.style.display = 'block';
+  };
+  if(errEl) errEl.style.display = 'none';
+
+  // 1) Lire les valeurs du formulaire
+  const accountType = document.querySelector('input[name="fpwAccountType"]:checked')?.value || 'membre';
+  const username = (document.getElementById('fpwUsername')?.value || '').trim().toLowerCase();
+  const userEmail = (document.getElementById('fpwUserEmail')?.value || '').trim();
+
+  // 2) Validations
+  if(accountType === 'admin'){
+    if(!username){ showErr(L.errUsername); return; }
+    if(username === 'admin'){ showErr(L.errAdminLocked); return; }
+  }
+  if(!userEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)){
+    showErr(L.errEmail); return;
+  }
+
+  // 3) Vérifier que l'utilisateur existe dans state.users ou DEFAULT_USERS
+  const knownUsernames = ['admin','president','secretaire','tresorier','censeur','membre'];
+  const effectiveUsername = accountType === 'membre' ? 'membre' : username;
+  if(accountType === 'admin' && !knownUsernames.includes(username)){
+    showErr(L.errUnknownUser); return;
+  }
+
+  // 4) Générer un nouveau mot de passe temporaire
+  const newPwd = generateTempPassword();
+  const dateStr = new Date().toLocaleString(isFr ? 'fr-FR' : 'en-US');
+
+  // 5) Pour le compte membre : appliquer le nouveau MDP localement
+  if(accountType === 'membre'){
+    if(Array.isArray(state.users)){
+      const membre = state.users.find(u => u.username === 'membre');
+      if(membre){
+        membre.password = newPwd;
+        membre.mustChangePassword = false; // on garde le MDP généré tel quel
+        saveState();
+        console.log('[V6.20] Mot de passe membre réinitialisé localement via demande par email');
+      }
+    }
+  }
+
+  // 6) Construire l'email mailto:
+  const accountTypeLabel = accountType === 'membre'
+    ? (isFr ? 'Membre (compte commun)' : 'Member (shared account)')
+    : (isFr ? 'Administrateur' : 'Administrator');
+
+  const emailBody = L.emailBody
+    .replace('%ACCOUNT_TYPE%', accountTypeLabel)
+    .replace('%USERNAME%', effectiveUsername)
+    .replace('%DATE%', dateStr)
+    .replace('%USER_EMAIL%', userEmail)
+    .replace('%NEW_PASSWORD%', newPwd);
+
+  const mailtoUrl = 'mailto:' + encodeURIComponent(ADMIN_CONTACT_EMAIL) +
+    '?subject=' + encodeURIComponent(L.emailSubject) +
+    '&body=' + encodeURIComponent(emailBody);
+
+  // 7) Tenter d'ouvrir le client mail
+  let mailtoOk = false;
+  try {
+    const w = window.open(mailtoUrl, '_self');
+    mailtoOk = true; // mailto: ne renvoie pas d'erreur même si le client mail n'existe pas
+  } catch(e){
+    console.warn('[V6.20] mailto: failed', e);
+    mailtoOk = false;
+  }
+
+  // 8) Afficher l'écran de succès avec le nouveau MDP visible
+  let successBody;
+  if(accountType === 'membre'){
+    successBody = L.successBodyMember
+      .replace('%PWD%', newPwd)
+      .replace('%ADMIN_EMAIL%', ADMIN_CONTACT_EMAIL);
+  } else {
+    successBody = L.successBodyAdmin
+      .replace('%ADMIN_EMAIL%', ADMIN_CONTACT_EMAIL)
+      .replace('%USER_EMAIL%', userEmail);
+  }
+
+  // Si mailto a échoué, ajouter les informations à copier manuellement
+  if(!mailtoOk){
+    successBody += '<div style="background:#fee2e2;border-left:4px solid #dc2626;padding:10px;border-radius:6px;margin-top:12px;font-size:12px"><b>' + L.mailtoFailed + '</b><br>📧 À: ' + ADMIN_CONTACT_EMAIL + '<br>📋 Sujet: ' + L.emailSubject + '<br>📄 Corps: <pre style="white-space:pre-wrap;background:white;padding:8px;border-radius:4px;margin-top:6px">' + emailBody.replace(/</g,'&lt;') + '</pre></div>';
+  }
+
+  const footer = '<button class="btn" onclick="closeModal()" style="width:100%">' + L.closeBtn + '</button>';
+  openModal(L.successTitle, successBody, footer, 'large');
+}
+
 
 function doLogin(){
   const u = document.getElementById('loginUsername').value.trim();
@@ -3469,7 +3713,7 @@ function doLogin(){
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.getElementById('loginPassword').value = ''; // sécurité : vide le champ password
-  // V6.19 : affiche le bouton flottant de rafraîchissement (mobile/tablette)
+  // V6.20 : affiche le bouton flottant de rafraîchissement (mobile/tablette)
   if(typeof showRefreshFab === 'function') showRefreshFab(true);
   updateSidebarUserDisplay();
   renderNav();
@@ -3756,7 +4000,7 @@ function renderNav(){
     <div class="nav-item ${state.activeModule===item.id?'active':''}" onclick="navigateTo('${item.id}')">
       <span class="icon">${item.icon}</span> ${t(item.labelKey)}
     </div>`).join('');
-  // V6.19 : le sous-titre sous APD-MINAT affiche désormais le slogan de l'Amicale
+  // V6.20 : le sous-titre sous APD-MINAT affiche désormais le slogan de l'Amicale
   // (ne plus écraser avec state.settings.associationName qui affichait 'APD-MINAT' en doublon)
   const _sloganEl = document.getElementById('sidebarAssocName');
   if(_sloganEl && !_sloganEl.textContent.trim()){
@@ -9153,7 +9397,7 @@ function startFastPullTimer(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// V6.19 : RAFRAÎCHISSEMENT MANUEL POUR MOBILE / TABLETTE
+// V6.20 : RAFRAÎCHISSEMENT MANUEL POUR MOBILE / TABLETTE
 // ════════════════════════════════════════════════════════════════
 let _manualRefreshInProgress = false;
 let _lastUserActivityAt = Date.now();
@@ -9209,7 +9453,7 @@ async function manualRefreshData(){
     const pulled = await silentPullFromCloud();
     if(pulled){
       // Données effectivement mises à jour — silentPull a déjà affiché le toast
-      console.log('V6.19: manualRefresh → données mises à jour');
+      console.log('V6.20: manualRefresh → données mises à jour');
     } else {
       // Aucune mise à jour côté cloud
       if(typeof toast === 'function'){
@@ -9223,7 +9467,7 @@ async function manualRefreshData(){
       }
     }
   } catch(e){
-    console.error('V6.19: manualRefresh error', e);
+    console.error('V6.20: manualRefresh error', e);
     if(typeof toast === 'function'){
       toast('Échec du rafraîchissement', e.message || String(e), 'error');
     } else {
@@ -9315,7 +9559,7 @@ function startIdleRefresh(){
     const idleTime = Date.now() - _lastUserActivityAt;
     const TWO_MIN = 2 * 60 * 1000;
     if(idleTime > TWO_MIN){
-      console.log('V6.19: idle refresh — pull silencieux');
+      console.log('V6.20: idle refresh — pull silencieux');
       if(typeof _lastPullCheck !== 'undefined') _lastPullCheck = 0;
       silentPullFromCloud().catch(()=>{});
       _lastUserActivityAt = Date.now();  // reset pour éviter les boucles
@@ -9339,7 +9583,7 @@ function setupUserActivityTracking(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// V6.19 : PULL-TO-REFRESH (mobile uniquement)
+// V6.20 : PULL-TO-REFRESH (mobile uniquement)
 // Détecte un swipe vers le bas quand le scroll est en haut de page.
 // ════════════════════════════════════════════════════════════════
 function setupPullToRefresh(){
@@ -9383,7 +9627,7 @@ function setupPullToRefresh(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// V6.19 : INITIALISATION — appelée depuis finalizeLoad()
+// V6.20 : INITIALISATION — appelée depuis finalizeLoad()
 // ════════════════════════════════════════════════════════════════
 function initMobileRefresh(){
   // NE PAS afficher le FAB ici — il sera affiché après connexion réussie (doLogin).
@@ -9394,7 +9638,7 @@ function initMobileRefresh(){
   // Démarre les détecteurs (inactifs tant qu'utilisateur non connecté)
   startStaleDetector();
   startIdleRefresh();
-  console.log('V6.19: mobile refresh initialized — pull-to-refresh actif, FAB sera visible après login');
+  console.log('V6.20: mobile refresh initialized — pull-to-refresh actif, FAB sera visible après login');
 }
 
 
@@ -11345,11 +11589,11 @@ document.getElementById('loginUsername').addEventListener('keypress', e => { if(
 </script>
   <div id="syncToast" class="sync-toast"></div>
 
-<!-- V6.19 : Pull-to-refresh indicator (mobile) -->
+<!-- V6.20 : Pull-to-refresh indicator (mobile) -->
 <div id="ptrIndicator" class="ptr-indicator"><span class="ptr-text"><span class="ptr-icon">⟳</span> Relâcher pour rafraîchir</span></div>
-<!-- V6.19 : Banner "données anciennes" -->
+<!-- V6.20 : Banner "données anciennes" -->
 <div id="dataStaleBanner" class="data-stale-banner" onclick="manualRefreshData()"><span>⏰</span><span id="staleBannerText">Données anciennes — toucher pour rafraîchir</span></div>
-<!-- V6.19 : Bouton flottant de rafraîchissement manuel -->
+<!-- V6.20 : Bouton flottant de rafraîchissement manuel -->
 <button id="syncFab" class="sync-fab" onclick="manualRefreshData()" title="Rafraîchir les données" aria-label="Rafraîchir les données">
   <span class="fab-icon">⟳</span>
   <span class="fab-badge"></span>
