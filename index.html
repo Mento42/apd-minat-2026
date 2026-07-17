@@ -387,7 +387,7 @@
 }
 .sync-toast.show{opacity:1;transform:translateY(0)}
 
-/* V6.20 : Bouton de rafraîchissement manuel (mobile / tablette) */
+/* V6.21 : Bouton de rafraîchissement manuel (mobile / tablette) */
 .sync-fab{
   position:fixed;bottom:20px;right:20px;z-index:9999;
   width:54px;height:54px;border-radius:50%;
@@ -530,7 +530,12 @@
     <div style="text-align:center;margin-top:10px">
       <a href="javascript:void(0)" onclick="showForgotPasswordWizard()" style="color:#0f5b45;font-size:13px;font-weight:600;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" data-i18n="login.forgotPassword">🔑 Mot de passe oublié ?</a>
     </div>
-
+    <div class="login-hint">
+      <div style="margin-top:10px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;line-height:1.6">
+        <strong style="color:#0f5b45">🔐 Accès à l'application</strong><br>
+        <em data-i18n="login.secureHint">Pour des raisons de sécurité, les identifiants ne sont pas affichés publiquement. Si vous avez oublié votre mot de passe, cliquez sur « Mot de passe oublié ? » ci-dessus ou contactez l'administrateur technique ou un membre du Bureau Exécutif.</em>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -552,7 +557,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.19</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.21</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -592,12 +597,7 @@ const TRANSLATIONS = {
     'login.passwordPlaceholder': 'Entrez votre mot de passe',
     'login.submit': 'Se connecter',
     'login.forgotPassword': '🔑 Mot de passe oublié ?',
-    'login.membersTitle': '👥 Membres de l\'Amicale',
-    'login.membersHint': 'Utilisez le compte commun ci-dessous pour consulter l\'application :',
-    'login.membersCreds': 'Identifiants membres',
-    'login.adminsTitle': '🔐 Administrateurs (Bureau Exécutif)',
-    'login.adminsAdmin': 'Administrateur technique',
-    'login.adminsWarning': '⚠ Ces mots de passe doivent être changés à la première connexion.',
+    'login.secureHint': 'Pour des raisons de sécurité, les identifiants ne sont pas affichés publiquement. Si vous avez oublié votre mot de passe, cliquez sur « Mot de passe oublié ? » ci-dessus ou contactez l\'administrateur technique ou un membre du Bureau Exécutif.',
     // Nav menu
     'nav.dashboard': 'Tableau de bord',
     'nav.members': 'Membres',
@@ -610,6 +610,7 @@ const TRANSLATIONS = {
     'nav.loans': 'Prêts',
     'nav.events': 'Événements',
     'nav.contributions': 'Cotisations',
+    'nav.messages': 'Messagerie',
     'nav.releve': 'Relevé Membre',
     'nav.bilan': 'Bilan Annuel',
     'nav.statut': 'Statut & Règlement',
@@ -620,7 +621,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.19',
+    'sidebar.version': 'APD-MINAT • Version 6.21',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -933,6 +934,7 @@ const TRANSLATIONS = {
     'nav.loans': 'Loans',
     'nav.events': 'Events',
     'nav.contributions': 'Contributions',
+    'nav.messages': 'Messaging',
     'nav.releve': 'Member Statement',
     'nav.bilan': 'Annual Report',
     'nav.statut': 'Status & Rules',
@@ -943,7 +945,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.19',
+    'sidebar.version': 'APD-MINAT • Version 6.21',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -2030,6 +2032,7 @@ const NAV_ITEMS = [
   { id:'loans', labelKey:'nav.loans', icon:'💵' },
   { id:'events', labelKey:'nav.events', icon:'🎉' },
   { id:'contributions', labelKey:'nav.contributions', icon:'🤝' },
+  { id:'messages', labelKey:'nav.messages', icon:'✉️' },
   { id:'releve', labelKey:'nav.releve', icon:'🧾' },
   { id:'bilan', labelKey:'nav.bilan', icon:'📈' },
   { id:'statut', labelKey:'nav.statut', icon:'📜' },
@@ -2051,7 +2054,7 @@ const DEFAULT_USERS = [
 ];
 
 // ════════════════════════════════════════════════════════════════
-// 📨 V6.20 : Email de l'administrateur technique pour les demandes
+// 📨 V6.21 : Email de l'administrateur technique pour les demandes
 //  de réinitialisation de mot de passe via mailto:.
 //  ⚠️ À PERSONNALISER : remplacez l'email ci-dessous par celui de
 //     l'administrateur technique réel de votre Amicale.
@@ -2127,6 +2130,9 @@ let state = {
   tontineSchedules: [], tontineContributions: [], loans: [],
   events: [], eventContributions: [], contributions: [], penalties: [],
   secoursWithdrawals: [],
+  // V6.21 : Messagerie interne entre utilisateurs
+  // messages = [{ id, from, to, subject, body, sentAt, readBy: [username1, ...] }]
+  messages: [],
   settings: { associationName:'APD-MINAT', logo:'', anneeEnCours:new Date().getFullYear(),
     statut: STATUT_PAR_DEFAUT,
     reglement: REGLEMENT_PAR_DEFAUT,
@@ -3312,7 +3318,7 @@ function publishDataForMembers(){
 }
 
 // ════════════════════════════════════════════════════════════════
-// V6.20 : ASSISTANT « MOT DE PASSE OUBLIÉ »
+// V6.21 : ASSISTANT « MOT DE PASSE OUBLIÉ »
 // Ouvre un modal avec les étapes de récupération selon le profil.
 // ════════════════════════════════════════════════════════════════
 function showForgotPasswordWizard(){
@@ -3396,7 +3402,7 @@ function showForgotPasswordStep(step){
 
 
 // ════════════════════════════════════════════════════════════════
-// 📨 V6.20 : FORMULAIRE "DEMANDER UN NOUVEAU MOT DE PASSE PAR EMAIL"
+// 📨 V6.21 : FORMULAIRE "DEMANDER UN NOUVEAU MOT DE PASSE PAR EMAIL"
 //  Affiche un sous-formulaire dans le wizard pour saisir :
 //    - type de compte (membre / admin)
 //    - nom d'utilisateur (pour admin) ou confirmation (pour membre)
@@ -3574,7 +3580,7 @@ function sendPasswordRecoveryEmail(){
         membre.password = newPwd;
         membre.mustChangePassword = false; // on garde le MDP généré tel quel
         saveState();
-        console.log('[V6.20] Mot de passe membre réinitialisé localement via demande par email');
+        console.log('[V6.21] Mot de passe membre réinitialisé localement via demande par email');
       }
     }
   }
@@ -3975,10 +3981,17 @@ function renderNav(){
   const nav = document.getElementById('navMenu');
   // V6.14 : les membres n'ont pas accès à l'onglet Paramètres (réservé aux administrateurs)
   const visibleItems = NAV_ITEMS.filter(item => item.id !== 'settings' || isAdmin());
-  nav.innerHTML = visibleItems.map(item => `
+  // V6.21 : compte les messages non lus pour le badge
+  const unreadCount = (typeof getUnreadMessageCount === 'function') ? getUnreadMessageCount() : 0;
+  nav.innerHTML = visibleItems.map(item => {
+    const badge = (item.id === 'messages' && unreadCount > 0)
+      ? `<span style="margin-left:6px;background:#dc2626;color:white;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:bold;min-width:18px;display:inline-block;text-align:center">${unreadCount > 99 ? '99+' : unreadCount}</span>`
+      : '';
+    return `
     <div class="nav-item ${state.activeModule===item.id?'active':''}" onclick="navigateTo('${item.id}')">
-      <span class="icon">${item.icon}</span> ${t(item.labelKey)}
-    </div>`).join('');
+      <span class="icon">${item.icon}</span> ${t(item.labelKey)}${badge}
+    </div>`;
+  }).join('');
   // V6.20 : le sous-titre sous APD-MINAT affiche désormais le slogan de l'Amicale
   // (ne plus écraser avec state.settings.associationName qui affichait 'APD-MINAT' en doublon)
   const _sloganEl = document.getElementById('sidebarAssocName');
@@ -4067,6 +4080,454 @@ function seedDemoData(){
    MODULES — each is a function returning HTML string
    ============================================================ */
 const MODULES = {};
+
+
+/* ---------- MESSAGERIE (V6.21) ---------- */
+// Messagerie interne entre utilisateurs de l'application.
+// Les messages sont stockés dans state.messages et sauvegardés localement.
+// ⚠️ Limitation : pour le compte "membre" (partagé), tous les membres voient les messages reçus.
+
+// Retourne le nombre de messages non lus pour l'utilisateur courant.
+function getUnreadMessageCount(){
+  if(!state.currentUser) return 0;
+  const me = state.currentUser.username;
+  if(!Array.isArray(state.messages)) return 0;
+  return state.messages.filter(m =>
+    m.to === me &&
+    !(m.readBy || []).includes(me)
+  ).length;
+}
+
+// Retourne la liste des conversations (groupées par interlocuteur).
+function getConversations(){
+  if(!state.currentUser) return [];
+  const me = state.currentUser.username;
+  if(!Array.isArray(state.messages)) return [];
+  // Map : otherUser -> { user, lastMessage, unreadCount, messages[] }
+  const convos = {};
+  state.messages.forEach(m => {
+    const otherUser = (m.from === me) ? m.to : (m.to === me ? m.from : null);
+    if(!otherUser) return; // message où je ne suis ni expéditeur ni destinataire
+    if(!convos[otherUser]){
+      convos[otherUser] = { user: otherUser, lastMessage: null, unreadCount: 0, messages: [] };
+    }
+    convos[otherUser].messages.push(m);
+    if(!convos[otherUser].lastMessage || new Date(m.sentAt) > new Date(convos[otherUser].lastMessage.sentAt)){
+      convos[otherUser].lastMessage = m;
+    }
+    if(m.to === me && !(m.readBy || []).includes(me)){
+      convos[otherUser].unreadCount++;
+    }
+  });
+  // Trie par dernier message (plus récent en premier)
+  return Object.values(convos).sort((a, b) => {
+    if(!a.lastMessage) return 1;
+    if(!b.lastMessage) return -1;
+    return new Date(b.lastMessage.sentAt) - new Date(a.lastMessage.sentAt);
+  });
+}
+
+// Retourne le libellé affichable d'un utilisateur (username + rôle/nom).
+function getUserDisplayLabel(username){
+  if(username === 'admin') return '🔧 Administrateur technique';
+  if(username === 'membre') return '👥 Membre (compte commun)';
+  // Cherche dans DEFAULT_USERS et state.users
+  const u = (state.users || []).find(x => x.username === username);
+  if(u && u.bureauRole) return '👤 ' + u.bureauRole + ' (' + username + ')';
+  if(u) return '👤 ' + username;
+  return '👤 ' + username;
+}
+
+// Rendu principal du module Messagerie
+MODULES.messages = function(){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const L = isFr ? {
+    title: '✉️ Messagerie interne',
+    subtitle: 'Communiquez avec les autres utilisateurs de l\'application',
+    newBtn: '✏️ Nouvelle conversation',
+    noConvo: 'Aucune conversation pour le moment',
+    noConvoHint: 'Cliquez sur « Nouvelle conversation » pour démarrer.',
+    unread: 'non lu(s)',
+    lastMsg: 'Dernier message',
+    you: 'Vous',
+    backBtn: '← Retour',
+    sendBtn: '📨 Envoyer',
+    subject: 'Sujet',
+    message: 'Message',
+    recipient: 'Destinataire',
+    selectRecipient: '— Sélectionnez —',
+    sendToAll: '📢 Tous les administrateurs',
+    sendToAllMembers: '📢 Tous les membres',
+    placeholder: 'Écrivez votre message…',
+    sentAt: 'Envoyé le',
+    markRead: 'Marquer comme lu',
+    confirmDelete: 'Supprimer cette conversation ? Les messages seront définitivement perdus.',
+    deleteBtn: '🗑️ Supprimer',
+    replyHint: 'Votre réponse sera envoyée à',
+    noRecipient: 'Aucun destinataire disponible. Contactez l\'administrateur.',
+    msgSent: 'Message envoyé',
+    msgSentBody: 'Votre message a été envoyé à',
+    infoTitle: 'ℹ️ À propos de la messagerie',
+    infoBody: 'La messagerie est interne à l\'application. Les messages sont stockés localement et synchronisés avec le cloud si activé. Pour le compte <code>membre</code> (partagé), tous les membres voient les messages reçus — évitez d\'y partager des informations sensibles.',
+    noMessagesYet: 'Aucun message dans cette conversation',
+    noMessagesHint: 'Écrivez le premier message ci-dessous.',
+    backToList: '← Conversations',
+    broadcast: 'Diffusion',
+    broadcastHint: 'Envoi à plusieurs destinataires',
+    allAdmins: 'Tous les administrateurs',
+    allMembers: 'Tous les membres (compte membre)'
+  } : {
+    title: '✉️ Internal messaging',
+    subtitle: 'Communicate with other application users',
+    newBtn: '✏️ New conversation',
+    noConvo: 'No conversation yet',
+    noConvoHint: 'Click "New conversation" to start.',
+    unread: 'unread',
+    lastMsg: 'Last message',
+    you: 'You',
+    backBtn: '← Back',
+    sendBtn: '📨 Send',
+    subject: 'Subject',
+    message: 'Message',
+    recipient: 'Recipient',
+    selectRecipient: '— Select —',
+    sendToAll: '📢 All administrators',
+    sendToAllMembers: '📢 All members',
+    placeholder: 'Write your message…',
+    sentAt: 'Sent on',
+    markRead: 'Mark as read',
+    confirmDelete: 'Delete this conversation? Messages will be permanently lost.',
+    deleteBtn: '🗑️ Delete',
+    replyHint: 'Your reply will be sent to',
+    noRecipient: 'No recipient available. Contact the administrator.',
+    msgSent: 'Message sent',
+    msgSentBody: 'Your message has been sent to',
+    infoTitle: 'ℹ️ About messaging',
+    infoBody: 'Messaging is internal to the application. Messages are stored locally and synced with the cloud if enabled. For the <code>member</code> shared account, all members see received messages — avoid sharing sensitive information there.',
+    noMessagesYet: 'No messages in this conversation',
+    noMessagesHint: 'Write the first message below.',
+    backToList: '← Conversations',
+    broadcast: 'Broadcast',
+    broadcastHint: 'Send to multiple recipients',
+    allAdmins: 'All administrators',
+    allMembers: 'All members (member account)'
+  };
+
+  // Si on est en mode "vue conversation" (state._msgViewUser), afficher la conversation
+  if(state._msgViewUser){
+    return renderConversation(state._msgViewUser, L);
+  }
+  // Si on est en mode "nouvelle conversation"
+  if(state._msgNewConvo){
+    return renderNewConversation(L);
+  }
+  // Sinon : liste des conversations
+  return renderConversationList(L);
+};
+
+// Rendu : liste des conversations
+function renderConversationList(L){
+  const convos = getConversations();
+  const me = state.currentUser.username;
+  let html = `
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="margin:0">${L.title}</h2>
+        <p style="margin:4px 0 0;color:#64748b;font-size:13px">${L.subtitle}</p>
+      </div>
+      <button class="btn" onclick="state._msgNewConvo=true; navigateTo('messages')" style="background:#0f5b45;color:white">
+        ${L.newBtn}
+      </button>
+    </div>
+    <div style="background:#eff6ff;border-left:4px solid #3b82f6;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:12px;color:#1e40af">
+      <strong>${L.infoTitle}</strong> ${L.infoBody}
+    </div>
+  `;
+
+  if(convos.length === 0){
+    html += `
+      <div style="text-align:center;padding:40px 20px;color:#64748b">
+        <div style="font-size:48px;margin-bottom:10px">📭</div>
+        <p style="font-weight:600;margin:0 0 4px">${L.noConvo}</p>
+        <p style="font-size:13px;margin:0">${L.noConvoHint}</p>
+      </div>
+    `;
+    return html;
+  }
+
+  html += `<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">`;
+  convos.forEach(c => {
+    const lastMsg = c.lastMessage;
+    const lastDate = lastMsg ? new Date(lastMsg.sentAt).toLocaleString() : '';
+    const lastBody = lastMsg ? (lastMsg.body.length > 60 ? lastMsg.body.substring(0,60) + '…' : lastMsg.body) : '';
+    const lastFrom = lastMsg ? (lastMsg.from === me ? L.you : getUserDisplayLabel(c.user)) : '';
+    const unreadBadge = c.unreadCount > 0
+      ? `<span style="background:#dc2626;color:white;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:bold">${c.unreadCount} ${L.unread}</span>`
+      : '';
+    html += `
+      <div onclick="openConversation('${c.user}')" style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center;gap:10px" onmouseover="this.style.borderColor='#0f5b45';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:#0f5b45;margin-bottom:4px">${getUserDisplayLabel(c.user)}</div>
+          <div style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${lastFrom}:</strong> ${lastBody.replace(/</g,'&lt;')}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px">${lastDate}</div>
+        </div>
+        ${unreadBadge}
+      </div>
+    `;
+  });
+  html += `</div>`;
+  return html;
+}
+
+// Ouvre une conversation avec un utilisateur spécifique
+function openConversation(username){
+  state._msgViewUser = username;
+  state._msgNewConvo = false;
+  // Marque tous les messages de cet expéditeur comme lus
+  if(Array.isArray(state.messages)){
+    state.messages.forEach(m => {
+      if(m.from === username && m.to === state.currentUser.username){
+        if(!m.readBy) m.readBy = [];
+        if(!m.readBy.includes(state.currentUser.username)){
+          m.readBy.push(state.currentUser.username);
+        }
+      }
+    });
+    saveState();
+  }
+  navigateTo('messages');
+}
+
+// Rendu : vue d'une conversation
+function renderConversation(otherUser, L){
+  const me = state.currentUser.username;
+  const conv = getConversations().find(c => c.user === otherUser);
+  const messages = conv ? conv.messages.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt)) : [];
+
+  let html = `
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <button class="btn btn-ghost" onclick="state._msgViewUser=null; navigateTo('messages')">${L.backBtn}</button>
+      <div style="text-align:right">
+        <h2 style="margin:0;font-size:18px">${getUserDisplayLabel(otherUser)}</h2>
+      </div>
+    </div>
+  `;
+
+  if(messages.length === 0){
+    html += `
+      <div style="text-align:center;padding:30px 20px;color:#64748b">
+        <div style="font-size:36px;margin-bottom:8px">💬</div>
+        <p style="font-weight:600;margin:0 0 4px">${L.noMessagesYet}</p>
+        <p style="font-size:13px;margin:0">${L.noMessagesHint}</p>
+      </div>
+    `;
+  } else {
+    html += `<div style="display:flex;flex-direction:column;gap:10px;margin:14px 0;max-height:60vh;overflow-y:auto;padding:4px">`;
+    messages.forEach(m => {
+      const isMe = m.from === me;
+      const date = new Date(m.sentAt).toLocaleString();
+      const escapedBody = (m.body || '').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+      const escapedSubject = (m.subject || '').replace(/</g,'&lt;');
+      html += `
+        <div style="display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'}">
+          <div style="max-width:80%;background:${isMe?'#dcfce7':'white'};border:1px solid ${isMe?'#86efac':'#e2e8f0'};border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,0,0,0.04)">
+            ${escapedSubject ? `<div style="font-weight:600;font-size:13px;color:#0f5b45;margin-bottom:4px">${escapedSubject}</div>` : ''}
+            <div style="font-size:14px;color:#1e293b;line-height:1.5">${escapedBody}</div>
+            <div style="font-size:10px;color:#94a3b8;margin-top:6px;text-align:right">${date}</div>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  // Formulaire de réponse
+  html += `
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-top:12px">
+      <div style="font-size:12px;color:#64748b;margin-bottom:8px">${L.replyHint} <strong>${getUserDisplayLabel(otherUser)}</strong></div>
+      <textarea id="msgReplyBody" placeholder="${L.placeholder}" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+        <button class="btn" onclick="sendReply('${otherUser}')" style="background:#0f5b45;color:white">${L.sendBtn}</button>
+      </div>
+    </div>
+  `;
+
+  // Bouton supprimer la conversation
+  html += `
+    <div style="margin-top:14px;text-align:right">
+      <button class="btn btn-ghost" onclick="deleteConversation('${otherUser}')" style="color:#dc2626;font-size:12px">${L.deleteBtn}</button>
+    </div>
+  `;
+
+  return html;
+}
+
+// Envoie une réponse dans une conversation existante
+function sendReply(toUser){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const body = (document.getElementById('msgReplyBody')?.value || '').trim();
+  if(!body){
+    if(isFr) toast('Message vide', 'Veuillez saisir un message avant d\'envoyer.', 'error');
+    else toast('Empty message', 'Please write a message before sending.', 'error');
+    return;
+  }
+  const msg = {
+    id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    from: state.currentUser.username,
+    to: toUser,
+    subject: '', // pas de sujet pour les réponses
+    body: body,
+    sentAt: new Date().toISOString(),
+    readBy: [state.currentUser.username] // l'expéditeur a lu son propre message
+  };
+  if(!Array.isArray(state.messages)) state.messages = [];
+  state.messages.push(msg);
+  saveState();
+  // Re-render la conversation
+  navigateTo('messages');
+  const L_success = isFr ? 'Message envoyé' : 'Message sent';
+  const L_body = isFr ? 'Votre message a été envoyé à ' : 'Your message has been sent to ';
+  toast(L_success, L_body + getUserDisplayLabel(toUser), 'success');
+}
+
+// Supprime une conversation (tous les messages entre moi et otherUser)
+function deleteConversation(otherUser){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const confirmMsg = isFr ? 'Supprimer cette conversation ? Les messages seront définitivement perdus.' : 'Delete this conversation? Messages will be permanently lost.';
+  if(!confirm(confirmMsg)) return;
+  const me = state.currentUser.username;
+  state.messages = (state.messages || []).filter(m =>
+    !((m.from === me && m.to === otherUser) || (m.from === otherUser && m.to === me))
+  );
+  state._msgViewUser = null;
+  saveState();
+  navigateTo('messages');
+  toast(isFr ? 'Supprimé' : 'Deleted', isFr ? 'Conversation supprimée.' : 'Conversation deleted.', 'success');
+}
+
+// Rendu : nouvelle conversation
+function renderNewConversation(L){
+  // Liste des destinataires possibles : tous les utilisateurs sauf moi
+  const me = state.currentUser.username;
+  const allUsers = (state.users || []).filter(u => u.username !== me);
+
+  let html = `
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <button class="btn btn-ghost" onclick="state._msgNewConvo=false; navigateTo('messages')">${L.backBtn}</button>
+      <h2 style="margin:0;font-size:18px">${L.newBtn}</h2>
+    </div>
+    <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-top:12px">
+  `;
+
+  if(allUsers.length === 0){
+    html += `
+      <div style="text-align:center;padding:20px;color:#dc2626">
+        <p>${L.noRecipient}</p>
+      </div>
+    `;
+    html += `</div>`;
+    return html;
+  }
+
+  // Option diffusion
+  const admins = allUsers.filter(u => u.role === 'admin');
+  const members = allUsers.filter(u => u.role === 'membre');
+
+  html += `
+      <div class="form-group" style="margin-bottom:12px">
+        <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px">${L.recipient}</label>
+        <select id="msgRecipient" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px">
+          <option value="">${L.selectRecipient}</option>
+          ${admins.length > 0 ? `<optgroup label="${L.allAdmins}">` : ''}
+          ${admins.map(u => `<option value="${u.username}">${getUserDisplayLabel(u.username)}</option>`).join('')}
+          ${admins.length > 0 ? `</optgroup>` : ''}
+          ${members.length > 0 ? `<optgroup label="${L.allMembers}">` : ''}
+          ${members.map(u => `<option value="${u.username}">${getUserDisplayLabel(u.username)}</option>`).join('')}
+          ${members.length > 0 ? `</optgroup>` : ''}
+          <optgroup label="${L.broadcast}">
+            <option value="__ALL_ADMIN__">${L.sendToAll}</option>
+            <option value="__ALL_MEMBERS__">${L.sendToAllMembers}</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px">${L.subject}</label>
+        <input type="text" id="msgSubject" placeholder="${L.subject}" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px">
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px">${L.message}</label>
+        <textarea id="msgBody" placeholder="${L.placeholder}" rows="5" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="state._msgNewConvo=false; navigateTo('messages')">${L.backBtn}</button>
+        <button class="btn" onclick="sendNewMessage()" style="background:#0f5b45;color:white">${L.sendBtn}</button>
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+// Envoie un nouveau message (ou diffusion)
+function sendNewMessage(){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const recipient = document.getElementById('msgRecipient')?.value || '';
+  const subject = (document.getElementById('msgSubject')?.value || '').trim();
+  const body = (document.getElementById('msgBody')?.value || '').trim();
+  const L_err_subj = isFr ? 'Destinataire manquant' : 'Missing recipient';
+  const L_err_subj_body = isFr ? 'Veuillez sélectionner un destinataire.' : 'Please select a recipient.';
+  const L_err_body = isFr ? 'Message vide' : 'Empty message';
+  const L_err_body_body = isFr ? 'Veuillez saisir un message avant d\'envoyer.' : 'Please write a message before sending.';
+  const L_ok = isFr ? 'Message envoyé' : 'Message sent';
+  const L_ok_body_single = isFr ? 'Votre message a été envoyé à ' : 'Your message has been sent to ';
+  const L_ok_body_multi = isFr ? 'Votre message a été envoyé à ' : 'Your message has been sent to ';
+  const L_multi = isFr ? ' destinataire(s)' : ' recipient(s)';
+
+  if(!recipient){
+    toast(L_err_subj, L_err_subj_body, 'error'); return;
+  }
+  if(!body){
+    toast(L_err_body, L_err_body_body, 'error'); return;
+  }
+
+  // Détermine la liste des destinataires
+  let recipients = [];
+  if(recipient === '__ALL_ADMIN__'){
+    recipients = (state.users || []).filter(u => u.role === 'admin' && u.username !== state.currentUser.username).map(u => u.username);
+  } else if(recipient === '__ALL_MEMBERS__'){
+    recipients = (state.users || []).filter(u => u.role === 'membre').map(u => u.username);
+  } else {
+    recipients = [recipient];
+  }
+
+  if(recipients.length === 0){
+    toast(L_err_subj, L_err_subj_body, 'error'); return;
+  }
+
+  // Crée un message par destinataire
+  const now = new Date().toISOString();
+  if(!Array.isArray(state.messages)) state.messages = [];
+  recipients.forEach(r => {
+    state.messages.push({
+      id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      from: state.currentUser.username,
+      to: r,
+      subject: subject,
+      body: body,
+      sentAt: now,
+      readBy: [state.currentUser.username]
+    });
+  });
+
+  saveState();
+  state._msgNewConvo = false;
+  navigateTo('messages');
+  toast(L_ok, L_ok_body_multi + recipients.length + L_multi, 'success');
+}
+
 
 /* ---------- DASHBOARD ---------- */
 MODULES.dashboard = function(){
