@@ -557,7 +557,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.22</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.23</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -621,7 +621,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.22',
+    'sidebar.version': 'APD-MINAT • Version 6.23',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -945,7 +945,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.22',
+    'sidebar.version': 'APD-MINAT • Version 6.23',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -2411,17 +2411,10 @@ function loadState(){
           if(data.activeSessions && typeof data.activeSessions === 'object'){
             state.activeSessions = data.activeSessions;
           }
-          // 🛡️ V6.22 : préserver les messages de la messagerie interne.
-          // Sans cela, tout message envoyé est perdu au prochain chargement quand les
-          // données embarquées ont autant ou plus de membres que les données locales
-          // (cas normal !). state.messages est réinitialisé à [] par le state par défaut.
+          // 📨 V6.22 : préserver les messages locaux (sinon messagerie vidée à chaque rechargement)
           if(Array.isArray(data.messages) && data.messages.length > 0){
             state.messages = data.messages;
-            console.log('🛡️ V6.22: messages locaux préservés (', data.messages.length, 'message(s))');
-          }
-          // 🛡️ V6.22 : préserver aussi pendingAdminLogins (notifications admin) — même cause.
-          if(Array.isArray(data.pendingAdminLogins)){
-            state.pendingAdminLogins = data.pendingAdminLogins;
+            console.log('📨 V6.22: messages locaux préservés (', data.messages.length, 'messages)');
           }
         }
       }
@@ -2459,13 +2452,10 @@ function loadState(){
           if(parsed.activeSessions && typeof parsed.activeSessions === 'object'){
             state.activeSessions = parsed.activeSessions;
           }
-          // 🛡️ V6.22 : préserver messages + pendingAdminLogins (même logique que la branche IDB)
+          // 📨 V6.22 : préserver les messages locaux (path localStorage)
           if(Array.isArray(parsed.messages) && parsed.messages.length > 0){
             state.messages = parsed.messages;
-            console.log('🛡️ V6.22: messages locaux préservés (localStorage,', parsed.messages.length, 'message(s))');
-          }
-          if(Array.isArray(parsed.pendingAdminLogins)){
-            state.pendingAdminLogins = parsed.pendingAdminLogins;
+            console.log('📨 V6.22: messages locaux préservés (localStorage,', parsed.messages.length, 'messages)');
           }
         }
       }
@@ -3257,11 +3247,6 @@ function applyPublishedData(data){
   const preservedActiveModule = state.activeModule;
   const preservedAuditLog = state.auditLog;
   const preservedActiveSessions = state.activeSessions;
-  // 🛡️ V6.22 : préserver aussi messages + pendingAdminLogins — sinon un membre qui se
-  // reconnecte perd tous ses messages reçus (applyPublishedData écrase state avec data
-  // qui ne contient pas messages).
-  const preservedMessages = state.messages;
-  const preservedPendingAdminLogins = state.pendingAdminLogins;
   // On fusionne : data primero, puis on garantit que DEFAULT_USERS est présent
   state = { ...state, ...data };
   // 🌐 V6.16 : restaure la config sync préservée (force Supabase cloud)
@@ -3279,9 +3264,6 @@ function applyPublishedData(data){
   // Restaure aussi le journal d'audit et les sessions actives locaux
   if(Array.isArray(preservedAuditLog)) state.auditLog = preservedAuditLog;
   if(preservedActiveSessions && typeof preservedActiveSessions === 'object') state.activeSessions = preservedActiveSessions;
-  // 🛡️ V6.22 : restaure les messages et notifications admin locales
-  if(Array.isArray(preservedMessages)) state.messages = preservedMessages;
-  if(Array.isArray(preservedPendingAdminLogins)) state.pendingAdminLogins = preservedPendingAdminLogins;
   state.currentUser = currentUser; // On restaure l'utilisateur connecté
   // Marque l'état comme « lecture seule » pour les membres
   window._publishedDataMode = true;
@@ -3722,6 +3704,12 @@ function doLogin(){
   // Enregistre la session active (pour notification de l'admin technique)
   if(!state.activeSessions) state.activeSessions = {};
   state.activeSessions[user.username] = { sessionId, loginAt, bureauRole: user.bureauRole || null };
+  // 📨 V6.22 : réinitialise l'état de vue de la messagerie (transient — ne doit pas
+  // être hérité de la session précédente d'un autre utilisateur sur le même navigateur)
+  state._msgViewUser = null;
+  state._msgNewConvo = false;
+  // 📎 V6.23 : réinitialise aussi le brouillon de pièces jointes
+  state._msgDraftAttachments = [];
   saveState();
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('active');
@@ -3742,6 +3730,17 @@ function doLogin(){
   if(user.username === 'admin'){
     showPendingAdminLoginNotifications();
   }
+  // 📨 V6.22 : démarre la messagerie instantanée (polling + cross-tab sync)
+  try {
+    if(typeof setupCrossTabSync === 'function') setupCrossTabSync();
+    if(typeof startMessagePolling === 'function') startMessagePolling();
+    // Pull initial des messages après 2s (pour récupérer les messages récents du cloud)
+    setTimeout(() => {
+      if(typeof pullMessagesFromCloud === 'function'){
+        pullMessagesFromCloud().catch(()=>{});
+      }
+    }, 2000);
+  } catch(e){ console.warn('V6.22: messaging init skipped:', e); }
   // 🌐 V6.3 : si l'utilisateur est un membre (lecture seule), on charge les données publiées (data.json)
   // depuis le serveur (Vercel). Les admins utilisent leurs données locales (IndexedDB).
   // 🌐 V6.16 : en PRIORITÉ, on tente un PULL Supabase (temps réel) avant data.json (statique).
@@ -3852,6 +3851,8 @@ function doLogout(){
     }
   }
   state.currentUser = null;
+  // 📨 V6.22 : arrête le polling de messagerie à la déconnexion
+  if(typeof stopMessagePolling === 'function') stopMessagePolling();
   saveState();
   document.getElementById('app').classList.remove('active');
   document.getElementById('loginScreen').style.display = 'flex';
@@ -4053,6 +4054,14 @@ function navigateTo(moduleId){
   if(typeof silentPullFromCloud === 'function'){
     silentPullFromCloud().catch(()=>{});
   }
+  // 📨 V6.22 : adapte la fréquence de polling des messages selon le module actif
+  if(typeof refreshMessagePollingInterval === 'function'){
+    refreshMessagePollingInterval();
+  }
+  // 📨 V6.22 : si on entre dans une conversation, scroll en bas
+  if(moduleId === 'messages' && state._msgViewUser){
+    setTimeout(scrollConversationToBottom, 100);
+  }
 }
 
 /* ---------- SEED DEMO DATA ---------- */
@@ -4197,14 +4206,26 @@ MODULES.messages = function(){
     msgSent: 'Message envoyé',
     msgSentBody: 'Votre message a été envoyé à',
     infoTitle: 'ℹ️ À propos de la messagerie',
-    infoBody: 'La messagerie est interne à l\'application. Les messages sont stockés localement et synchronisés avec le cloud si activé. Pour le compte <code>membre</code> (partagé), tous les membres voient les messages reçus — évitez d\'y partager des informations sensibles.',
+    infoBody: 'La messagerie est <strong>instantanée</strong> (V6.22) : les messages sont synchronisés en temps réel via le cloud. <strong>Pièces jointes</strong> (V6.23) : photos et documents (1 Mo max par fichier). Pour le compte <code>membre</code> (partagé), tous les membres voient les messages reçus — évitez d\'y partager des informations sensibles.',
     noMessagesYet: 'Aucun message dans cette conversation',
     noMessagesHint: 'Écrivez le premier message ci-dessous.',
     backToList: '← Conversations',
     broadcast: 'Diffusion',
     broadcastHint: 'Envoi à plusieurs destinataires',
     allAdmins: 'Tous les administrateurs',
-    allMembers: 'Tous les membres (compte membre)'
+    allMembers: 'Tous les membres (compte membre)',
+    // 📎 V6.23 : pièces jointes
+    attachments: 'Pièces jointes',
+    addAttachment: '📎 Joindre',
+    addAttachmentHint: 'Photos ou documents (1 Mo max par fichier, 2 Mo au total)',
+    attachmentTooBig: 'Fichier trop volumineux',
+    attachmentTooBigBody: 'Limite : 1 Mo par fichier. Réduisez la taille ou utilisez un lien.',
+    attachmentTotalTooBig: 'Trop de pièces jointes',
+    attachmentTotalTooBigBody: 'Limite totale : 2 Mo par message. Réduisez le nombre de fichiers.',
+    removeAttachment: 'Retirer',
+    downloadAttachment: '⬇ Télécharger',
+    attachedFiles: 'Fichiers joints',
+    attachmentHint: 'Photos (JPG, PNG, GIF) ou documents (PDF, Word, Excel, TXT). Les pièces jointes sont synchronisées avec le message.'
   } : {
     title: '✉️ Internal messaging',
     subtitle: 'Communicate with other application users',
@@ -4232,14 +4253,26 @@ MODULES.messages = function(){
     msgSent: 'Message sent',
     msgSentBody: 'Your message has been sent to',
     infoTitle: 'ℹ️ About messaging',
-    infoBody: 'Messaging is internal to the application. Messages are stored locally and synced with the cloud if enabled. For the <code>member</code> shared account, all members see received messages — avoid sharing sensitive information there.',
+    infoBody: 'Messaging is <strong>instant</strong> (V6.22): messages are synced in real-time via the cloud. <strong>Attachments</strong> (V6.23): photos and documents (1 MB max per file). For the <code>member</code> shared account, all members see received messages — avoid sharing sensitive information there.',
     noMessagesYet: 'No messages in this conversation',
     noMessagesHint: 'Write the first message below.',
     backToList: '← Conversations',
     broadcast: 'Broadcast',
     broadcastHint: 'Send to multiple recipients',
     allAdmins: 'All administrators',
-    allMembers: 'All members (member account)'
+    allMembers: 'All members (member account)',
+    // 📎 V6.23 : attachments
+    attachments: 'Attachments',
+    addAttachment: '📎 Attach',
+    addAttachmentHint: 'Photos or documents (1 MB max per file, 2 MB total)',
+    attachmentTooBig: 'File too large',
+    attachmentTooBigBody: 'Limit: 1 MB per file. Reduce the size or use a link.',
+    attachmentTotalTooBig: 'Too many attachments',
+    attachmentTotalTooBigBody: 'Total limit: 2 MB per message. Reduce the number of files.',
+    removeAttachment: 'Remove',
+    downloadAttachment: '⬇ Download',
+    attachedFiles: 'Attached files',
+    attachmentHint: 'Photos (JPG, PNG, GIF) or documents (PDF, Word, Excel, TXT). Attachments are synced with the message.'
   };
 
   // Si on est en mode "vue conversation" (state._msgViewUser), afficher la conversation
@@ -4290,6 +4323,9 @@ function renderConversationList(L){
     const lastDate = lastMsg ? new Date(lastMsg.sentAt).toLocaleString() : '';
     const lastBody = lastMsg ? (lastMsg.body.length > 60 ? lastMsg.body.substring(0,60) + '…' : lastMsg.body) : '';
     const lastFrom = lastMsg ? (lastMsg.from === me ? L.you : getUserDisplayLabel(c.user)) : '';
+    // 📎 V6.23 : icône pièce jointe si le dernier message a des PJ
+    const hasAttach = lastMsg && Array.isArray(lastMsg.attachments) && lastMsg.attachments.length > 0;
+    const attachIcon = hasAttach ? '📎 ' : '';
     const unreadBadge = c.unreadCount > 0
       ? `<span style="background:#dc2626;color:white;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:bold">${c.unreadCount} ${L.unread}</span>`
       : '';
@@ -4297,7 +4333,7 @@ function renderConversationList(L){
       <div onclick="openConversation('${c.user}')" style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center;gap:10px" onmouseover="this.style.borderColor='#0f5b45';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;color:#0f5b45;margin-bottom:4px">${getUserDisplayLabel(c.user)}</div>
-          <div style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${lastFrom}:</strong> ${lastBody.replace(/</g,'&lt;')}</div>
+          <div style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${lastFrom}:</strong> ${attachIcon}${lastBody.replace(/</g,'&lt;')}</div>
           <div style="font-size:11px;color:#94a3b8;margin-top:4px">${lastDate}</div>
         </div>
         ${unreadBadge}
@@ -4313,16 +4349,27 @@ function openConversation(username){
   state._msgViewUser = username;
   state._msgNewConvo = false;
   // Marque tous les messages de cet expéditeur comme lus
+  let markedAny = false;
   if(Array.isArray(state.messages)){
     state.messages.forEach(m => {
       if(m.from === username && m.to === state.currentUser.username){
         if(!m.readBy) m.readBy = [];
         if(!m.readBy.includes(state.currentUser.username)){
           m.readBy.push(state.currentUser.username);
+          markedAny = true;
         }
       }
     });
-    saveState();
+    if(markedAny){
+      saveState();
+      // 📨 V6.22 : pousse la mise à jour des readBy vers le cloud (Vu par le destinataire)
+      if(typeof pushMessagesToCloud === 'function'){
+        pushMessagesToCloud().catch(()=>{});
+      }
+      if(typeof notifyOtherTabsMessageUpdate === 'function'){
+        notifyOtherTabsMessageUpdate();
+      }
+    }
   }
   navigateTo('messages');
 }
@@ -4332,12 +4379,33 @@ function renderConversation(otherUser, L){
   const me = state.currentUser.username;
   const conv = getConversations().find(c => c.user === otherUser);
   const messages = conv ? conv.messages.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt)) : [];
+  // 📨 V6.22 : indicateur "Vu" pour les messages envoyés par moi
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const Lseen = isFr ? 'Vu' : 'Seen';
+  const Ldelivered = isFr ? 'Livré' : 'Delivered';
+  const LrefreshBtn = isFr ? '⟳ Rafraîchir' : '⟳ Refresh';
+  const LsoundOn = isFr ? '🔔 Son activé' : '🔔 Sound on';
+  const LsoundOff = isFr ? '🔕 Son coupé' : '🔕 Sound off';
+  const LtypingHint = isFr ? 'Appuyez sur Entrée pour envoyer • Shift+Entrée = nouvelle ligne'
+                          : 'Press Enter to send • Shift+Enter = new line';
+  const soundOff = (typeof isMessageSoundOff === 'function') ? isMessageSoundOff() : false;
+
+  // 📨 V6.22 : indique si le cloud est configuré (pour afficher le statut temps réel)
+  const cloudConfigured = (typeof isCloudConfigured === 'function') && isCloudConfigured();
+  const onlineNow = (typeof isOnline === 'function') ? isOnline() : true;
+  const realtimeStatus = cloudConfigured
+    ? (onlineNow
+        ? `<span style="color:#10b981;font-size:11px;font-weight:600">● ${isFr?'Temps réel':'Real-time'}</span>`
+        : `<span style="color:#dc2626;font-size:11px;font-weight:600">● ${isFr?'Hors-ligne':'Offline'}</span>`)
+    : `<span style="color:#94a3b8;font-size:11px">○ ${isFr?'Local uniquement':'Local only'}</span>`;
 
   let html = `
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <button class="btn btn-ghost" onclick="state._msgViewUser=null; navigateTo('messages')">${L.backBtn}</button>
-      <div style="text-align:right">
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px">
         <h2 style="margin:0;font-size:18px">${getUserDisplayLabel(otherUser)}</h2>
+        ${realtimeStatus}
       </div>
     </div>
   `;
@@ -4351,18 +4419,30 @@ function renderConversation(otherUser, L){
       </div>
     `;
   } else {
-    html += `<div style="display:flex;flex-direction:column;gap:10px;margin:14px 0;max-height:60vh;overflow-y:auto;padding:4px">`;
+    html += `<div id="msgConvScroll" style="display:flex;flex-direction:column;gap:10px;margin:14px 0;max-height:55vh;overflow-y:auto;padding:4px;background:#fafafa;border-radius:8px">`;
     messages.forEach(m => {
       const isMe = m.from === me;
       const date = new Date(m.sentAt).toLocaleString();
       const escapedBody = (m.body || '').replace(/</g,'&lt;').replace(/\n/g,'<br>');
       const escapedSubject = (m.subject || '').replace(/</g,'&lt;');
+      // 📨 V6.22 : "Vu" indicator pour mes messages envoyés
+      let readIndicator = '';
+      if(isMe){
+        const wasRead = (m.readBy||[]).includes(otherUser);
+        readIndicator = wasRead
+          ? `<span style="color:#3b82f6;font-size:10px">✓✓ ${Lseen}</span>`
+          : `<span style="color:#94a3b8;font-size:10px">✓ ${Ldelivered}</span>`;
+      }
       html += `
         <div style="display:flex;flex-direction:column;align-items:${isMe?'flex-end':'flex-start'}">
           <div style="max-width:80%;background:${isMe?'#dcfce7':'white'};border:1px solid ${isMe?'#86efac':'#e2e8f0'};border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,0,0,0.04)">
             ${escapedSubject ? `<div style="font-weight:600;font-size:13px;color:#0f5b45;margin-bottom:4px">${escapedSubject}</div>` : ''}
             <div style="font-size:14px;color:#1e293b;line-height:1.5">${escapedBody}</div>
-            <div style="font-size:10px;color:#94a3b8;margin-top:6px;text-align:right">${date}</div>
+            ${renderMessageAttachments(m.attachments, isMe)}
+            <div style="font-size:10px;color:#94a3b8;margin-top:6px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:6px">
+              <span>${date}</span>
+              ${readIndicator}
+            </div>
           </div>
         </div>
       `;
@@ -4370,14 +4450,33 @@ function renderConversation(otherUser, L){
     html += `</div>`;
   }
 
-  // Formulaire de réponse
+  // 📨 V6.22 : barre d'outils (refresh + son + statut)
   html += `
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-top:12px">
+    <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn btn-ghost" onclick="refreshCurrentConversation()" style="font-size:11px;padding:4px 10px" title="${LrefreshBtn}">${LrefreshBtn}</button>
+        <button class="btn btn-ghost" onclick="toggleMsgSoundUI(this)" style="font-size:11px;padding:4px 10px" title="${isFr?'Activer/couper le son':'Toggle sound'}">${soundOff?LsoundOff:LsoundOn}</button>
+      </div>
+      <div style="font-size:10px;color:#94a3b8">${LtypingHint}</div>
+    </div>
+  `;
+
+  // Formulaire de réponse — Enter pour envoyer, Shift+Enter pour nouvelle ligne
+  // 📎 V6.23 : initialise le brouillon pièces jointes si pas déjà fait
+  if(!Array.isArray(state._msgDraftAttachments)){
+    state._msgDraftAttachments = [];
+  }
+  html += `
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-top:8px">
       <div style="font-size:12px;color:#64748b;margin-bottom:8px">${L.replyHint} <strong>${getUserDisplayLabel(otherUser)}</strong></div>
-      <textarea id="msgReplyBody" placeholder="${L.placeholder}" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
-      <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+      <textarea id="msgReplyBody" placeholder="${L.placeholder}" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical" onkeydown="handleReplyKeydown(event,'${otherUser}')"></textarea>
+      <input type="file" id="msgReplyFileInput" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" style="display:none" onchange="addMessageAttachment(this)">
+      <div style="display:flex;gap:8px;margin-top:8px;justify-content:space-between;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="document.getElementById('msgReplyFileInput').click()" style="font-size:12px;padding:4px 10px" title="${L.addAttachmentHint}">${L.addAttachment}</button>
+        <div style="font-size:10px;color:#94a3b8;max-width:60%;text-align:right">${L.addAttachmentHint}</div>
         <button class="btn" onclick="sendReply('${otherUser}')" style="background:#0f5b45;color:white">${L.sendBtn}</button>
       </div>
+      <div id="msgAttachmentPreview" style="display:none;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
     </div>
   `;
 
@@ -4391,14 +4490,49 @@ function renderConversation(otherUser, L){
   return html;
 }
 
+// 📨 V6.22 : gestionnaire Enter pour envoyer (Shift+Enter = nouvelle ligne)
+function handleReplyKeydown(event, toUser){
+  if(event.key === 'Enter' && !event.shiftKey){
+    event.preventDefault();
+    sendReply(toUser);
+  }
+}
+
+// 📨 V6.22 : rafraîchit la conversation courante (pull messages + re-render)
+async function refreshCurrentConversation(){
+  if(typeof pullMessagesFromCloud === 'function'){
+    if(typeof _msgLastPollAt !== 'undefined') _msgLastPollAt = 0;  // bypass throttle
+    await pullMessagesFromCloud().catch(()=>{});
+  }
+  if(state._msgViewUser){
+    navigateTo('messages');
+    setTimeout(scrollConversationToBottom, 100);
+  }
+  toast('⟳', 'Messagerie rafraîchie', 'success');
+}
+
+// 📨 V6.22 : bascule le son depuis l'UI
+function toggleMsgSoundUI(btn){
+  if(typeof toggleMessageSound === 'function'){
+    const isOff = toggleMessageSound();
+    const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+                (typeof CURRENT_LANG === 'undefined');
+    btn.textContent = isOff
+      ? (isFr ? '🔕 Son coupé' : '🔕 Sound off')
+      : (isFr ? '🔔 Son activé' : '🔔 Sound on');
+  }
+}
+
 // Envoie une réponse dans une conversation existante
 function sendReply(toUser){
   const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
                (typeof CURRENT_LANG === 'undefined');
   const body = (document.getElementById('msgReplyBody')?.value || '').trim();
-  if(!body){
-    if(isFr) toast('Message vide', 'Veuillez saisir un message avant d\'envoyer.', 'error');
-    else toast('Empty message', 'Please write a message before sending.', 'error');
+  // 📎 V6.23 : récupère les pièces jointes en cours de brouillon
+  const draftAttachments = (Array.isArray(state._msgDraftAttachments) ? state._msgDraftAttachments : []).slice();
+  if(!body && draftAttachments.length === 0){
+    if(isFr) toast('Message vide', 'Veuillez saisir un message ou joindre un fichier avant d\'envoyer.', 'error');
+    else toast('Empty message', 'Please write a message or attach a file before sending.', 'error');
     return;
   }
   const msg = {
@@ -4407,17 +4541,36 @@ function sendReply(toUser){
     to: toUser,
     subject: '', // pas de sujet pour les réponses
     body: body,
+    attachments: draftAttachments, // 📎 V6.23 : pièces jointes
     sentAt: new Date().toISOString(),
     readBy: [state.currentUser.username] // l'expéditeur a lu son propre message
   };
   if(!Array.isArray(state.messages)) state.messages = [];
   state.messages.push(msg);
+  // 📎 V6.23 : efface le brouillon pièces jointes
+  state._msgDraftAttachments = [];
   saveState();
+  // 📨 V6.22 : pousse immédiatement vers le cloud pour partage temps réel
+  if(typeof pushMessagesToCloud === 'function'){
+    pushMessagesToCloud().catch(()=>{});
+  }
+  // Notifie les autres onglets du même navigateur
+  if(typeof notifyOtherTabsMessageUpdate === 'function'){
+    notifyOtherTabsMessageUpdate();
+  }
   // Re-render la conversation
   navigateTo('messages');
   const L_success = isFr ? 'Message envoyé' : 'Message sent';
   const L_body = isFr ? 'Votre message a été envoyé à ' : 'Your message has been sent to ';
   toast(L_success, L_body + getUserDisplayLabel(toUser), 'success');
+  // Auto-scroll en bas de la conversation
+  setTimeout(scrollConversationToBottom, 50);
+}
+
+// 📨 V6.22 : scroll automatique en bas de conversation
+function scrollConversationToBottom(){
+  const containers = document.querySelectorAll('[style*="max-height:60vh"]');
+  containers.forEach(c => { c.scrollTop = c.scrollHeight; });
 }
 
 // Supprime une conversation (tous les messages entre moi et otherUser)
@@ -4489,8 +4642,17 @@ function renderNewConversation(L){
         <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px">${L.message}</label>
         <textarea id="msgBody" placeholder="${L.placeholder}" rows="5" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical"></textarea>
       </div>
+      <input type="file" id="msgNewFileInput" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" style="display:none" onchange="addMessageAttachment(this)">
+      <div class="form-group" style="margin-bottom:12px">
+        <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px">${L.attachments}</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('msgNewFileInput').click()" style="font-size:12px;padding:4px 10px">${L.addAttachment}</button>
+          <span style="font-size:11px;color:#94a3b8">${L.attachmentHint}</span>
+        </div>
+        <div id="msgAttachmentPreview" style="display:none;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn btn-ghost" onclick="state._msgNewConvo=false; navigateTo('messages')">${L.backBtn}</button>
+        <button class="btn btn-ghost" onclick="state._msgNewConvo=false; state._msgDraftAttachments=[]; navigateTo('messages')">${L.backBtn}</button>
         <button class="btn" onclick="sendNewMessage()" style="background:#0f5b45;color:white">${L.sendBtn}</button>
       </div>
     </div>
@@ -4505,10 +4667,12 @@ function sendNewMessage(){
   const recipient = document.getElementById('msgRecipient')?.value || '';
   const subject = (document.getElementById('msgSubject')?.value || '').trim();
   const body = (document.getElementById('msgBody')?.value || '').trim();
+  // 📎 V6.23 : récupère les pièces jointes en cours de brouillon
+  const draftAttachments = (Array.isArray(state._msgDraftAttachments) ? state._msgDraftAttachments : []).slice();
   const L_err_subj = isFr ? 'Destinataire manquant' : 'Missing recipient';
   const L_err_subj_body = isFr ? 'Veuillez sélectionner un destinataire.' : 'Please select a recipient.';
   const L_err_body = isFr ? 'Message vide' : 'Empty message';
-  const L_err_body_body = isFr ? 'Veuillez saisir un message avant d\'envoyer.' : 'Please write a message before sending.';
+  const L_err_body_body = isFr ? 'Veuillez saisir un message ou joindre un fichier avant d\'envoyer.' : 'Please write a message or attach a file before sending.';
   const L_ok = isFr ? 'Message envoyé' : 'Message sent';
   const L_ok_body_single = isFr ? 'Votre message a été envoyé à ' : 'Your message has been sent to ';
   const L_ok_body_multi = isFr ? 'Votre message a été envoyé à ' : 'Your message has been sent to ';
@@ -4517,7 +4681,7 @@ function sendNewMessage(){
   if(!recipient){
     toast(L_err_subj, L_err_subj_body, 'error'); return;
   }
-  if(!body){
+  if(!body && draftAttachments.length === 0){
     toast(L_err_body, L_err_body_body, 'error'); return;
   }
 
@@ -4545,6 +4709,7 @@ function sendNewMessage(){
       to: r,
       subject: subject,
       body: body,
+      attachments: draftAttachments, // 📎 V6.23 : pièces jointes (même référence pour tous les destinataires)
       sentAt: now,
       readBy: [state.currentUser.username]
     });
@@ -4552,8 +4717,267 @@ function sendNewMessage(){
 
   saveState();
   state._msgNewConvo = false;
+  // 📎 V6.23 : efface le brouillon pièces jointes
+  state._msgDraftAttachments = [];
+  // 📨 V6.22 : pousse immédiatement vers le cloud pour partage temps réel
+  if(typeof pushMessagesToCloud === 'function'){
+    pushMessagesToCloud().catch(()=>{});
+  }
+  if(typeof notifyOtherTabsMessageUpdate === 'function'){
+    notifyOtherTabsMessageUpdate();
+  }
+  // Demande permission notifications navigateur (au premier envoi)
+  if(typeof requestNotificationPermission === 'function'){
+    requestNotificationPermission();
+  }
   navigateTo('messages');
   toast(L_ok, L_ok_body_multi + recipients.length + L_multi, 'success');
+}
+
+
+/* ---------- 📎 V6.23 : PIÈCES JOINTES (MESSAGERIE) ---------- */
+// Constantes de limites (compatible localStorage + cloud row ~1 Mo)
+const MSG_ATTACHMENT_MAX_SIZE = 1 * 1024 * 1024;        // 1 Mo par fichier
+const MSG_ATTACHMENT_MAX_TOTAL = 2 * 1024 * 1024;       // 2 Mo total par message
+const MSG_ATTACHMENT_MAX_COUNT = 6;                      // 6 fichiers max par message
+
+// Échappe le HTML pour les noms de fichiers (sécurité anti-XSS)
+function escapeAttachmentName(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Formatte une taille de fichier en Ko / Mo lisible
+function formatAttachmentSize(bytes){
+  if(!bytes || bytes <= 0) return '0 o';
+  if(bytes < 1024) return bytes + ' o';
+  if(bytes < 1024 * 1024) return Math.round(bytes/1024) + ' Ko';
+  return (bytes/(1024*1024)).toFixed(1) + ' Mo';
+}
+
+// Retourne une icône représentant le type de fichier (emoji)
+function getAttachmentIcon(type, name){
+  if(type && type.startsWith('image/')) return '🖼️';
+  if(type === 'application/pdf' || /\.pdf$/i.test(name||'')) return '📕';
+  if(type && (type.includes('word') || type.includes('officedocument.wordprocessing'))
+     || /\.(doc|docx)$/i.test(name||'')) return '📘';
+  if(type && (type.includes('excel') || type.includes('officedocument.spreadsheet'))
+     || /\.(xls|xlsx|csv)$/i.test(name||'')) return '📗';
+  if(type && type.startsWith('video/')) return '🎬';
+  if(type && type.startsWith('audio/')) return '🎵';
+  if(type === 'text/plain' || /\.(txt|md)$/i.test(name||'')) return '📄';
+  if(type === 'application/zip' || /\.(zip|rar|7z|tar|gz)$/i.test(name||'')) return '🗜️';
+  return '📎';
+}
+
+// Handler appelé quand l'utilisateur sélectionne un ou plusieurs fichiers
+// via le input file caché. Lit chaque fichier en base64 et l'ajoute au brouillon.
+function addMessageAttachment(inputEl){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const files = Array.from(inputEl.files || []);
+  if(files.length === 0) return;
+  // Reset input pour permettre de re-sélectionner le même fichier
+  inputEl.value = '';
+
+  if(!Array.isArray(state._msgDraftAttachments)){
+    state._msgDraftAttachments = [];
+  }
+
+  // Vérifie le nombre max
+  const remaining = MSG_ATTACHMENT_MAX_COUNT - state._msgDraftAttachments.length;
+  if(remaining <= 0){
+    toast(
+      isFr ? 'Trop de pièces jointes' : 'Too many attachments',
+      isFr ? `Maximum ${MSG_ATTACHMENT_MAX_COUNT} fichiers par message.` : `Maximum ${MSG_ATTACHMENT_MAX_COUNT} files per message.`,
+      'error'
+    );
+    return;
+  }
+
+  // Vérifie la taille totale actuelle
+  const currentTotal = state._msgDraftAttachments.reduce((s,a) => s + (a.size||0), 0);
+  let rejected = [];
+  let accepted = [];
+
+  files.slice(0, remaining).forEach(file => {
+    if(file.size > MSG_ATTACHMENT_MAX_SIZE){
+      rejected.push(file.name + ' (' + formatAttachmentSize(file.size) + ')');
+      return;
+    }
+    if(currentTotal + accepted.reduce((s,f) => s + f.size, 0) + file.size > MSG_ATTACHMENT_MAX_TOTAL){
+      rejected.push(file.name + ' (dépassement total)');
+      return;
+    }
+    accepted.push(file);
+  });
+
+  if(rejected.length > 0){
+    toast(
+      isFr ? 'Fichiers rejetés' : 'Files rejected',
+      (isFr ? 'Limite : 1 Mo/fichier, 2 Mo total. Rejetés: ' : 'Limit: 1 MB/file, 2 MB total. Rejected: ')
+        + rejected.join(', '),
+      'error'
+    );
+  }
+
+  if(accepted.length === 0) return;
+
+  // Lit chaque fichier en base64 (asynchrone via FileReader)
+  let loaded = 0;
+  accepted.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      state._msgDraftAttachments.push({
+        id: 'att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        dataUrl: e.target.result
+      });
+      loaded++;
+      if(loaded === accepted.length){
+        renderAttachmentPreview();
+      }
+    };
+    reader.onerror = () => {
+      console.error('📨 V6.23: FileReader error for', file.name);
+      loaded++;
+      if(loaded === accepted.length){
+        renderAttachmentPreview();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Retire une pièce jointe du brouillon
+function removeMessageAttachment(id){
+  if(!Array.isArray(state._msgDraftAttachments)) return;
+  state._msgDraftAttachments = state._msgDraftAttachments.filter(a => a.id !== id);
+  renderAttachmentPreview();
+}
+
+// Affiche les pièces jointes en cours de brouillon sous le formulaire
+function renderAttachmentPreview(){
+  const container = document.getElementById('msgAttachmentPreview');
+  if(!container) return;
+  if(!Array.isArray(state._msgDraftAttachments) || state._msgDraftAttachments.length === 0){
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'flex';
+  const totalSize = state._msgDraftAttachments.reduce((s,a) => s + (a.size||0), 0);
+  container.innerHTML = state._msgDraftAttachments.map(a => {
+    const isImage = a.type && a.type.startsWith('image/');
+    const icon = isImage
+      ? `<img src="${a.dataUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid #cbd5e1">`
+      : `<div style="width:40px;height:40px;background:#f1f5f9;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px">${getAttachmentIcon(a.type, a.name)}</div>`;
+    return `
+      <div style="display:flex;align-items:center;gap:6px;background:white;border:1px solid #cbd5e1;border-radius:6px;padding:4px 6px;max-width:240px">
+        ${icon}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeAttachmentName(a.name)}</div>
+          <div style="font-size:10px;color:#94a3b8">${formatAttachmentSize(a.size)}</div>
+        </div>
+        <button type="button" onclick="removeMessageAttachment('${a.id}')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:0 4px;line-height:1" title="Retirer">×</button>
+      </div>
+    `;
+  }).join('') + `<div style="font-size:10px;color:#94a3b8;width:100%;margin-top:2px">Total: ${formatAttachmentSize(totalSize)} / ${formatAttachmentSize(MSG_ATTACHMENT_MAX_TOTAL)}</div>`;
+}
+
+// Rendu des pièces jointes à l'intérieur d'un message affiché
+// attachments = [{id, name, type, size, dataUrl}]
+// isMe = true si c'est moi qui ai envoyé le message (pour le style)
+function renderMessageAttachments(attachments, isMe){
+  if(!attachments || !Array.isArray(attachments) || attachments.length === 0) return '';
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const Ldownload = isFr ? 'Télécharger' : 'Download';
+  const items = attachments.map(a => {
+    const isImage = a.type && a.type.startsWith('image/');
+    const sizeLabel = formatAttachmentSize(a.size);
+    if(isImage){
+      // Image : vignette cliquable qui ouvre un aperçu plein écran
+      return `
+        <div onclick="openAttachmentPreview('${a.id}')" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px" title="${escapeAttachmentName(a.name)}">
+          <img src="${a.dataUrl}" alt="${escapeAttachmentName(a.name)}" style="max-width:200px;max-height:200px;border-radius:6px;display:block;border:1px solid ${isMe?'#86efac':'#cbd5e1'};object-fit:contain;background:white">
+          <div style="font-size:10px;color:#64748b;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeAttachmentName(a.name)} (${sizeLabel})</div>
+        </div>
+      `;
+    }
+    // Document : lien de téléchargement avec icône
+    return `
+      <a href="${a.dataUrl}" download="${escapeAttachmentName(a.name)}" style="display:flex;align-items:center;gap:8px;background:${isMe?'#bbf7d0':'#f1f5f9'};border:1px solid ${isMe?'#86efac':'#cbd5e1'};border-radius:6px;padding:6px 10px;text-decoration:none;color:#1e293b;font-size:12px;max-width:260px" title="${escapeAttachmentName(a.name)}">
+        <span style="font-size:22px">${getAttachmentIcon(a.type, a.name)}</span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeAttachmentName(a.name)}</span>
+        <span style="color:#64748b;font-size:10px;white-space:nowrap">${sizeLabel}</span>
+        <span style="color:#0f5b45;font-size:14px">⬇</span>
+      </a>
+    `;
+  }).join('');
+  return `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid ${isMe?'rgba(134,239,172,0.6)':'#e2e8f0'}">
+      ${items}
+    </div>
+  `;
+}
+
+// Ouvre un aperçu plein écran d'une image (pièce jointe d'un message)
+// Recherche dans state.messages[].attachments puis dans state._msgDraftAttachments
+function openAttachmentPreview(attachmentId){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  const Ldownload = isFr ? '⬇ Télécharger' : '⬇ Download';
+  const Lclose = isFr ? 'Fermer' : 'Close';
+
+  // Cherche dans les messages
+  let target = null;
+  if(Array.isArray(state.messages)){
+    for(const m of state.messages){
+      if(Array.isArray(m.attachments)){
+        const found = m.attachments.find(a => a.id === attachmentId);
+        if(found){ target = found; break; }
+      }
+    }
+  }
+  // Cherche dans le brouillon
+  if(!target && Array.isArray(state._msgDraftAttachments)){
+    target = state._msgDraftAttachments.find(a => a.id === attachmentId);
+  }
+  if(!target){
+    console.warn('📨 V6.23: attachment not found:', attachmentId);
+    return;
+  }
+
+  const isImage = target.type && target.type.startsWith('image/');
+  const sizeLabel = formatAttachmentSize(target.size);
+
+  if(isImage){
+    openModal(
+      escapeAttachmentName(target.name),
+      `<div style="text-align:center">
+         <img src="${target.dataUrl}" alt="${escapeAttachmentName(target.name)}" style="max-width:100%;max-height:70vh;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+         <div style="margin-top:8px;font-size:12px;color:#64748b">${escapeAttachmentName(target.name)} — ${sizeLabel}</div>
+       </div>`,
+      `<button class="btn btn-ghost" onclick="closeModal()">${Lclose}</button>
+       <a href="${target.dataUrl}" download="${escapeAttachmentName(target.name)}" class="btn" style="background:#0f5b45;color:white;text-decoration:none">${Ldownload}</a>`,
+      'large'
+    );
+  } else {
+    // Pour les documents non-image, on propose juste le téléchargement
+    openModal(
+      escapeAttachmentName(target.name),
+      `<div style="text-align:center;padding:20px">
+         <div style="font-size:64px;margin-bottom:12px">${getAttachmentIcon(target.type, target.name)}</div>
+         <div style="font-weight:600;color:#1e293b;margin-bottom:4px">${escapeAttachmentName(target.name)}</div>
+         <div style="font-size:12px;color:#64748b">${sizeLabel} — ${target.type || 'type inconnu'}</div>
+       </div>`,
+      `<button class="btn btn-ghost" onclick="closeModal()">${Lclose}</button>
+       <a href="${target.dataUrl}" download="${escapeAttachmentName(target.name)}" class="btn" style="background:#0f5b45;color:white;text-decoration:none">${Ldownload}</a>`,
+      'small'
+    );
+  }
 }
 
 
@@ -9582,6 +10006,28 @@ async function pushToCloud(force){
       }
     }
     // 2) Construit le payload — on exclut les champs sensibles/transitoires
+    //    📨 V6.22 : MERGE des messages cloud + locaux AVANT de pousser, pour ne pas
+    //    écraser les messages envoyés par d'autres utilisateurs depuis le dernier pull.
+    const _cloudMsgsForPush = (cloud && cloud.data && Array.isArray(cloud.data.messages))
+      ? cloud.data.messages : [];
+    const _localMsgsForPush = Array.isArray(state.messages) ? state.messages : [];
+    const _mergedMsgsForPushMap = new Map();
+    _cloudMsgsForPush.forEach(m => { if(m && m.id) _mergedMsgsForPushMap.set(m.id, m); });
+    _localMsgsForPush.forEach(m => {
+      if(!m || !m.id) return;
+      const ex = _mergedMsgsForPushMap.get(m.id);
+      if(!ex){ _mergedMsgsForPushMap.set(m.id, m); return; }
+      const exD = ex.sentAt ? new Date(ex.sentAt).getTime() : 0;
+      const loD = m.sentAt ? new Date(m.sentAt).getTime() : 0;
+      const winner = loD > exD ? m : ex;
+      winner.readBy = Array.from(new Set([ ...((ex.readBy)||[]), ...((m.readBy)||[]) ]));
+      _mergedMsgsForPushMap.set(m.id, winner);
+    });
+    state.messages = Array.from(_mergedMsgsForPushMap.values()).sort((a,b) => {
+      const da = a.sentAt ? new Date(a.sentAt).getTime() : 0;
+      const db = b.sentAt ? new Date(b.sentAt).getTime() : 0;
+      return da - db;
+    });
     const payload = {
       id: state.sync.recordId,
       data: buildCloudPayload(),
@@ -9630,6 +10076,14 @@ function buildCloudPayload(){
   // Le journal d'audit est local à chaque instance (Task 46) — ne pas synchroniser.
   delete clone.auditLog;
   delete clone.activeSessions;
+  // 📨 V6.22 : état de vue de la messagerie — TRANSIENT (par utilisateur/session).
+  // Ne JAMAIS synchroniser ces champs au cloud, sinon un utilisateur qui se connecte
+  // hérite de la vue messagerie de l'utilisateur précédent (ex: conversation ouverte).
+  delete clone._msgViewUser;
+  delete clone._msgNewConvo;
+  // 📎 V6.23 : brouillon de pièces jointes en cours — TRANSIENT.
+  // Ne pas synchroniser (sinon un autre utilisateur hérite de mes fichiers en cours).
+  delete clone._msgDraftAttachments;
   return clone;
 }
 // Récupère l'état cloud et l'intègre localement (écrase les données locales).
@@ -9668,21 +10122,26 @@ async function pullFromCloud(force){
       }
     }
     // Fusionne : on garde sync/currentUser/users/activeModule locaux, on prend le reste du cloud
-    // 🛡️ V6.22 : les messages sont MERGÉS par ID (union) au lieu d'être écrasés.
-    // Sans cela, un pull silencieux automatique (toutes les 30s + au reload + au focus)
-    // écrase les messages locaux par la version cloud — qui peut être plus ancienne
-    // (par ex. quand un message vient d'être envoyé mais pas encore pushé).
-    // Stratégie : union par ID, priorité au message local en cas de conflit (le local
-    // est toujours au moins aussi récent que le cloud pour les messages créés ici).
-    const _localMsgs = Array.isArray(state.messages) ? state.messages : [];
+    // 📨 V6.22 : MERGE des messages locaux avec ceux du cloud (par ID)
+    const _localMsgs = Array.isArray(state.messages) ? state.messages.slice() : [];
     const _cloudMsgs = Array.isArray(cloud.data.messages) ? cloud.data.messages : [];
-    const _mergedMsgsMap = new Map();
-    _cloudMsgs.forEach(m => { if (m && m.id) _mergedMsgsMap.set(m.id, m); });
-    _localMsgs.forEach(m => { if (m && m.id) _mergedMsgsMap.set(m.id, m); });
-    const _mergedMessages = Array.from(_mergedMsgsMap.values());
-    // 🛡️ V6.22 : pendingAdminLogins est local (notifications pour l'admin technique) —
-    // ne jamais l'écraser par la version cloud.
-    const _preservedPendingAdminLogins = state.pendingAdminLogins;
+    const _mergedMsgMap = new Map();
+    _localMsgs.forEach(m => { if(m && m.id) _mergedMsgMap.set(m.id, m); });
+    _cloudMsgs.forEach(m => {
+      if(!m || !m.id) return;
+      const ex = _mergedMsgMap.get(m.id);
+      if(!ex){ _mergedMsgMap.set(m.id, m); return; }
+      const exD = ex.sentAt ? new Date(ex.sentAt).getTime() : 0;
+      const clD = m.sentAt ? new Date(m.sentAt).getTime() : 0;
+      const winner = clD > exD ? m : ex;
+      winner.readBy = Array.from(new Set([ ...((ex.readBy)||[]), ...((m.readBy)||[]) ]));
+      _mergedMsgMap.set(m.id, winner);
+    });
+    cloud.data.messages = Array.from(_mergedMsgMap.values()).sort((a,b) => {
+      const da = a.sentAt ? new Date(a.sentAt).getTime() : 0;
+      const db = b.sentAt ? new Date(b.sentAt).getTime() : 0;
+      return da - db;
+    });
     const preserved = {
       sync: state.sync,
       currentUser: state.currentUser,
@@ -9690,8 +10149,6 @@ async function pullFromCloud(force){
       users: state.users,
       auditLog: state.auditLog,         // Journal d'audit local (Task 46)
       activeSessions: state.activeSessions, // Sessions actives locales (Task 46)
-      messages: _mergedMessages,        // V6.22 : messages mergés (union par ID)
-      pendingAdminLogins: _preservedPendingAdminLogins, // V6.22 : notifications locales
     };
     state = Object.assign({}, cloud.data, preserved);
     // Met à jour les méta sync
@@ -9833,6 +10290,39 @@ async function silentPullFromCloud(){
     // Le cloud est plus récent → on tire silencieusement
     _syncInProgress = true;
     try {
+      // 📨 V6.22 : MERGE des messages locaux avec ceux du cloud (par ID).
+      // Au lieu d'écraser les messages locaux par ceux du cloud (perte des messages
+      // pas encore poussés), on fusionne en dédoublonnant par ID et en gardant le
+      // plus récent sentAt. Cela garantit que tous les messages envoyés par tous
+      // les utilisateurs sont visibles par tout le monde.
+      const localMessages = Array.isArray(state.messages) ? state.messages.slice() : [];
+      const cloudMessages = Array.isArray(cloud.data.messages) ? cloud.data.messages : [];
+      const mergedMessagesMap = new Map();
+      localMessages.forEach(m => { if(m && m.id) mergedMessagesMap.set(m.id, m); });
+      cloudMessages.forEach(m => {
+        if(!m || !m.id) return;
+        const existing = mergedMessagesMap.get(m.id);
+        if(!existing){
+          mergedMessagesMap.set(m.id, m);
+        } else {
+          // Garde le plus récent + fusionne les readBy
+          const exDate = existing.sentAt ? new Date(existing.sentAt).getTime() : 0;
+          const clDate = m.sentAt ? new Date(m.sentAt).getTime() : 0;
+          const winner = clDate > exDate ? m : existing;
+          const mergedReadBy = Array.from(new Set([
+            ...((existing.readBy)||[]),
+            ...((m.readBy)||[]),
+          ]));
+          winner.readBy = mergedReadBy;
+          mergedMessagesMap.set(m.id, winner);
+        }
+      });
+      const mergedMessages = Array.from(mergedMessagesMap.values()).sort((a,b) => {
+        const da = a.sentAt ? new Date(a.sentAt).getTime() : 0;
+        const db = b.sentAt ? new Date(b.sentAt).getTime() : 0;
+        return da - db;
+      });
+      cloud.data.messages = mergedMessages;
       // Préserve les champs locaux (session, users, sync meta)
       const preserved = {
         sync: state.sync,
@@ -9841,6 +10331,7 @@ async function silentPullFromCloud(){
         users: state.users,
         auditLog: state.auditLog,
         activeSessions: state.activeSessions,
+        // 📨 V6.22 : les messages fusionnés sont déjà dans cloud.data.messages
       };
       state = Object.assign({}, cloud.data, preserved);
       // Met à jour les méta sync
@@ -10303,6 +10794,415 @@ function checkForUpdates(){
 // Exposer globalement pour les boutons UI
 window.checkForUpdates = checkForUpdates;
 window.silentPullFromCloud = silentPullFromCloud;
+
+// ════════════════════════════════════════════════════════════════
+// 📨 V6.22 : MESSAGERIE INSTANTANÉE — PUSH/PULL SPÉCIFIQUE AUX MESSAGES
+// ════════════════════════════════════════════════════════════════
+// Permet à TOUS les utilisateurs (y compris les membres en lecture seule)
+// d'envoyer des messages au cloud SANS écraser les autres données.
+// Stratégie : fetch cloud → merge messages par ID → push back.
+// Ainsi un membre peut envoyer un message sans risquer d'écraser les
+// membres/transactions modifiés par un admin entre-temps.
+
+let _msgPushInProgress = false;
+let _msgPushLastAt = 0;
+let _msgFastPollTimer = null;
+let _msgLastSeenCount = 0;
+let _msgLastPollAt = 0;
+let _msgBroadcastChannel = null;  // BroadcastChannel pour sync cross-tab
+
+// Pousse UNIQUEMENT les messages vers le cloud (merge avec l'existant).
+// Appelé automatiquement après sendReply() / sendNewMessage().
+// Silent : pas de toast succès/erreur (juste console.log).
+async function pushMessagesToCloud(){
+  if(!isCloudConfigured()) return false;
+  if(!isOnline()) return false;
+  if(_msgPushInProgress) return false;
+  // Throttle 3s entre les pushes de messages
+  const now = Date.now();
+  if(now - _msgPushLastAt < 3000) return false;
+  _msgPushInProgress = true;
+  _msgPushLastAt = now;
+  try {
+    // 1) Récupère l'état cloud actuel
+    const cloud = await fetchCloudRecord();
+    const cloudMessages = (cloud && cloud.data && Array.isArray(cloud.data.messages))
+      ? cloud.data.messages : [];
+    // 2) Merge messages cloud + locaux (par ID)
+    const mergedMap = new Map();
+    cloudMessages.forEach(m => { if(m && m.id) mergedMap.set(m.id, m); });
+    (state.messages||[]).forEach(m => {
+      if(!m || !m.id) return;
+      const ex = mergedMap.get(m.id);
+      if(!ex){ mergedMap.set(m.id, m); return; }
+      const exD = ex.sentAt ? new Date(ex.sentAt).getTime() : 0;
+      const loD = m.sentAt ? new Date(m.sentAt).getTime() : 0;
+      const winner = loD > exD ? m : ex;
+      winner.readBy = Array.from(new Set([ ...((ex.readBy)||[]), ...((m.readBy)||[]) ]));
+      mergedMap.set(m.id, winner);
+    });
+    const mergedMessages = Array.from(mergedMap.values()).sort((a,b) => {
+      const da = a.sentAt ? new Date(a.sentAt).getTime() : 0;
+      const db = b.sentAt ? new Date(b.sentAt).getTime() : 0;
+      return da - db;
+    });
+    // 3) Met à jour l'état local avec les messages fusionnés
+    state.messages = mergedMessages;
+    saveState();
+    // 4) Construit le payload à pousser :
+    //    🚨 CRITIQUE — on part du cloud.data (données existantes) et on ne remplace
+    //    QUE les messages. Ainsi un membre (qui a des données locales potentiellement
+    //    anciennes en lecture seule) n'écrase PAS les membres/transactions récentes
+    //    modifiées par un admin. Seuls les messages sont mis à jour.
+    const cloudDataForPayload = (cloud && cloud.data) ? JSON.parse(JSON.stringify(cloud.data)) : {};
+    cloudDataForPayload.messages = mergedMessages;
+    // Si l'utilisateur courant est admin, on peut pousser TOUT l'état local (données à jour).
+    // Sinon (membre), on pousse les données cloud existantes + nos messages fusionnés.
+    const payloadData = (typeof isAdmin === 'function' && isAdmin())
+      ? buildCloudPayload()  // admin : pousse tout (state local à jour)
+      : cloudDataForPayload; // membre : pousse cloud + messages fusionnés uniquement
+    // 🛡️ S'assure que les messages fusionnés sont bien dans le payload (même pour admin)
+    payloadData.messages = mergedMessages;
+    const payload = {
+      id: state.sync.recordId,
+      data: payloadData,
+      updated_at: new Date().toISOString(),
+      updated_by: state.currentUser ? state.currentUser.username : 'unknown',
+    };
+    const res = await fetch(supabaseUrl(state.sync.table), {
+      method: 'POST',
+      headers: supabaseHeaders({
+        'Prefer': 'resolution=merge-duplicates,return=representation',
+      }),
+      body: JSON.stringify(payload),
+    });
+    if(!res.ok){
+      const txt = await res.text().catch(()=> '');
+      throw new Error(`HTTP ${res.status} ${res.statusText} — ${txt}`);
+    }
+    // 5) Met à jour les méta locales
+    if(state.sync){
+      state.sync.lastSyncAt = Date.now();
+      state.sync.lastPushedBy = payload.updated_by;
+      state.sync.localVersion = new Date(payload.updated_at).getTime();
+      state.sync.lastError = null;
+    }
+    console.log('📨 V6.22: messages poussés vers le cloud (', mergedMessages.length, 'messages )');
+    // 6) Notifie les autres onglets du même navigateur
+    notifyOtherTabsMessageUpdate();
+    return true;
+  } catch(e){
+    console.warn('📨 V6.22: pushMessagesToCloud échoué (non fatal):', e.message || e);
+    if(state.sync) state.sync.lastError = e.message || String(e);
+    return false;
+  } finally {
+    _msgPushInProgress = false;
+  }
+}
+
+// PULL spécifique aux messages : ne récupère QUE les nouveaux messages du cloud
+// sans toucher au reste de l'état local. Plus rapide et moins risqué.
+async function pullMessagesFromCloud(){
+  if(!isCloudConfigured()) return false;
+  if(!isOnline()) return false;
+  if(_syncInProgress) return false;
+  // Throttle 4s entre les pulls de messages
+  const now = Date.now();
+  if(now - _msgLastPollAt < 4000) return false;
+  _msgLastPollAt = now;
+  try {
+    const cloud = await fetchCloudRecord();
+    if(!cloud || !cloud.data) return false;
+    const cloudMessages = Array.isArray(cloud.data.messages) ? cloud.data.messages : [];
+    const localMessages = Array.isArray(state.messages) ? state.messages : [];
+    // Merge : ajoute les messages du cloud qui ne sont pas locaux
+    let newCount = 0;
+    const localIds = new Set(localMessages.map(m => m.id));
+    const merged = localMessages.slice();
+    cloudMessages.forEach(m => {
+      if(!m || !m.id) return;
+      const ex = merged.find(x => x.id === m.id);
+      if(!ex){
+        merged.push(m);
+        newCount++;
+      } else {
+        // Fusionne les readBy
+        const exD = ex.sentAt ? new Date(ex.sentAt).getTime() : 0;
+        const clD = m.sentAt ? new Date(m.sentAt).getTime() : 0;
+        if(clD > exD){
+          // Le cloud a une version plus récente (ex: readBy mis à jour)
+          Object.assign(ex, m);
+        }
+        const before = (ex.readBy||[]).length;
+        ex.readBy = Array.from(new Set([ ...((ex.readBy)||[]), ...((m.readBy)||[]) ]));
+        if(ex.readBy.length > before){
+          // Marque pour sauvegarde si on a appris de nouveaux readBy
+          newCount++;
+        }
+      }
+    });
+    if(newCount > 0){
+      state.messages = merged.sort((a,b) => {
+        const da = a.sentAt ? new Date(a.sentAt).getTime() : 0;
+        const db = b.sentAt ? new Date(b.sentAt).getTime() : 0;
+        return da - db;
+      });
+      saveState();
+      // Met à jour la méta sync (sans écraser localVersion)
+      if(state.sync) state.sync.lastSyncAt = Date.now();
+      console.log('📨 V6.22: ', newCount, ' nouveau(x) message(s) récupéré(s) du cloud');
+      // Déclenche la mise à jour de l'UI + notification sonore si applicable
+      onNewMessagesReceived(newCount);
+      return true;
+    }
+    return false;
+  } catch(e){
+    console.debug('📨 V6.22: pullMessagesFromCloud skipped:', e.message || e);
+    return false;
+  }
+}
+
+// Démarre le polling rapide des messages (toutes les 6s quand sur le module messages,
+// 15s sinon). Plus rapide que le pull global 30s.
+function startMessagePolling(){
+  stopMessagePolling();
+  if(!isCloudConfigured()) return;
+  const interval = (state.activeModule === 'messages') ? 6000 : 15000;
+  _msgFastPollTimer = setInterval(() => {
+    if(!isOnline()) return;
+    if(document.hidden && state.activeModule !== 'messages') return;
+    pullMessagesFromCloud().catch(()=>{});
+  }, interval);
+  console.log('📨 V6.22: message polling démarré (', interval/1000, 's )');
+}
+function stopMessagePolling(){
+  if(_msgFastPollTimer){
+    clearInterval(_msgFastPollTimer);
+    _msgFastPollTimer = null;
+  }
+}
+// Change la fréquence de polling selon le module actif.
+function refreshMessagePollingInterval(){
+  if(!_msgFastPollTimer) return;
+  startMessagePolling();  // redémarre avec le nouvel intervalle
+}
+
+// Callback appelé quand de nouveaux messages sont reçus du cloud.
+function onNewMessagesReceived(count){
+  // Met à jour l'UI si on est sur le module messages
+  if(state.activeModule === 'messages' && typeof navigateTo === 'function'){
+    navigateTo('messages');
+  }
+  // Met à jour le badge dans la sidebar
+  if(typeof renderNav === 'function') renderNav();
+  // Notification sonore si l'utilisateur a un nouveau message qui lui est destiné
+  if(state.currentUser){
+    const myUnread = (state.messages||[]).filter(m =>
+      m.to === state.currentUser.username &&
+      !(m.readBy||[]).includes(state.currentUser.username)
+    ).length;
+    if(myUnread > 0 && myUnread > _msgLastSeenCount){
+      playMessageSound();
+      // Notification navigateur si permise
+      showBrowserNotification(myUnread - _msgLastSeenCount);
+    }
+    _msgLastSeenCount = myUnread;
+  }
+}
+
+// Petit beep sonore via Web Audio API (pas de fichier externe).
+let _msgAudioCtx = null;
+function playMessageSound(){
+  try {
+    // Respecte les préférences utilisateur (son activé par défaut)
+    if(localStorage.getItem('apd_msg_sound_off') === '1') return;
+    if(!_msgAudioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      _msgAudioCtx = new AC();
+    }
+    const ctx = _msgAudioCtx;
+    if(ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);       // La5
+    osc.frequency.setValueAtTime(1108.73, ctx.currentTime + 0.08); // Do#6
+    osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.16); // Mi6
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.36);
+  } catch(e){ /* silent */ }
+}
+
+// Notification navigateur (Notification API)
+async function showBrowserNotification(count){
+  try {
+    if(!('Notification' in window)) return;
+    if(Notification.permission === 'default'){
+      await Notification.requestPermission();
+    }
+    if(Notification.permission !== 'granted') return;
+    const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+                (typeof CURRENT_LANG === 'undefined');
+    const title = count + (isFr ? ' nouveau(x) message(s)' : ' new message(s)');
+    const body = isFr ? 'Cliquez pour ouvrir la messagerie' : 'Click to open messaging';
+    const n = new Notification(title, {
+      body: body,
+      icon: '/favicon.ico',
+      tag: 'apdminat-message',
+    });
+    n.onclick = () => {
+      window.focus();
+      if(typeof navigateTo === 'function') navigateTo('messages');
+      n.close();
+    };
+    setTimeout(() => n.close(), 8000);
+  } catch(e){ /* silent */ }
+}
+
+// Demande la permission de notifications navigateur (au premier envoi de message).
+function requestNotificationPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    Notification.requestPermission().then(p => {
+      console.log('📨 V6.22: notification permission =', p);
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 📨 V6.22 : SYNC CROSS-TAB (onglets mêmes navigateur)
+// ════════════════════════════════════════════════════════════════
+// Utilise BroadcastChannel (moderne) + storage event (fallback).
+// Quand l'onglet A envoie un message, l'onglet B (connecté avec un autre
+// compte sur le même navigateur) recharge instantanément ses messages.
+
+function setupCrossTabSync(){
+  // 1) BroadcastChannel (Chrome/Firefox/Edge modernes)
+  if(typeof BroadcastChannel !== 'undefined'){
+    try {
+      _msgBroadcastChannel = new BroadcastChannel('apdminat_messages');
+      _msgBroadcastChannel.onmessage = (evt) => {
+        if(evt && evt.data && evt.data.type === 'messages_updated'){
+          // Recharge les messages depuis le stockage local
+          reloadMessagesFromStorage();
+        }
+      };
+      console.log('📨 V6.22: BroadcastChannel cross-tab sync actif');
+    } catch(e){
+      console.debug('BroadcastChannel non disponible:', e.message);
+    }
+  }
+  // 2) storage event (fallback Safari / anciens navigateurs)
+  window.addEventListener('storage', (evt) => {
+    if(evt.key === STORAGE_KEY && evt.newValue){
+      try {
+        const parsed = JSON.parse(evt.newValue);
+        if(Array.isArray(parsed.messages)){
+          const oldCount = (state.messages||[]).length;
+          // Merge les messages reçus (par ID)
+          const merged = (state.messages||[]).slice();
+          const localIds = new Set(merged.map(m => m.id));
+          let newCount = 0;
+          parsed.messages.forEach(m => {
+            if(!m || !m.id) return;
+            if(!localIds.has(m.id)){
+              merged.push(m);
+              newCount++;
+            } else {
+              // Met à jour readBy si plus complet
+              const ex = merged.find(x => x.id === m.id);
+              if(ex && m.readBy){
+                const before = (ex.readBy||[]).length;
+                ex.readBy = Array.from(new Set([ ...((ex.readBy)||[]), ...((m.readBy)||[]) ]));
+                if(ex.readBy.length > before) newCount++;
+              }
+            }
+          });
+          if(newCount > 0){
+            state.messages = merged.sort((a,b) => {
+              const da = a.sentAt ? new Date(a.sentAt).getTime() : 0;
+              const db = b.sentAt ? new Date(b.sentAt).getTime() : 0;
+              return da - db;
+            });
+            // Pas de saveState (boucle infinie possible) — juste update UI
+            onNewMessagesReceived(newCount);
+          }
+        }
+      } catch(_){ /* ignore */ }
+    }
+  });
+}
+
+// Notifie les autres onglets qu'il y a de nouveaux messages locaux.
+function notifyOtherTabsMessageUpdate(){
+  if(_msgBroadcastChannel){
+    try {
+      _msgBroadcastChannel.postMessage({ type: 'messages_updated', at: Date.now() });
+    } catch(_){ /* silent */ }
+  }
+}
+
+// Recharge les messages depuis localStorage (déclenché par cross-tab).
+function reloadMessagesFromStorage(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const parsed = JSON.parse(raw);
+    if(Array.isArray(parsed.messages)){
+      // Merge les messages stockés avec ceux en mémoire
+      const localIds = new Set((state.messages||[]).map(m => m.id));
+      let newCount = 0;
+      const merged = (state.messages||[]).slice();
+      parsed.messages.forEach(m => {
+        if(!m || !m.id) return;
+        if(!localIds.has(m.id)){
+          merged.push(m);
+          newCount++;
+        }
+      });
+      if(newCount > 0){
+        state.messages = merged.sort((a,b) => {
+          const da = a.sentAt ? new Date(a.sentAt).getTime() : 0;
+          const db = b.sentAt ? new Date(b.sentAt).getTime() : 0;
+          return da - db;
+        });
+        onNewMessagesReceived(newCount);
+      }
+    }
+  } catch(_){ /* silent */ }
+}
+
+// Bascule le son de notification.
+function toggleMessageSound(){
+  const isOff = localStorage.getItem('apd_msg_sound_off') === '1';
+  if(isOff){
+    localStorage.removeItem('apd_msg_sound_off');
+    return false;  // son activé
+  } else {
+    localStorage.setItem('apd_msg_sound_off', '1');
+    return true;   // son désactivé
+  }
+}
+function isMessageSoundOff(){
+  return localStorage.getItem('apd_msg_sound_off') === '1';
+}
+
+// Exposer globalement
+window.pushMessagesToCloud = pushMessagesToCloud;
+window.pullMessagesFromCloud = pullMessagesFromCloud;
+window.startMessagePolling = startMessagePolling;
+window.stopMessagePolling = stopMessagePolling;
+window.refreshMessagePollingInterval = refreshMessagePollingInterval;
+window.toggleMessageSound = toggleMessageSound;
+window.isMessageSoundOff = isMessageSoundOff;
+window.requestNotificationPermission = requestNotificationPermission;
+window.setupCrossTabSync = setupCrossTabSync;
 
 
 function saveCloudConfig(){
