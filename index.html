@@ -133,6 +133,14 @@
   .badge-amber-solid{background:var(--amber-500);color:white}
   .badge-blue-solid{background:var(--blue-600);color:white}
   .badge-purple-solid{background:var(--purple-600);color:white}
+  .badge-deces{background:#1f2937;color:#f3f4f6;border:1px solid #111827; font-weight:600;letter-spacing:.3px}
+  .badge-deces-solid{background:#111827;color:#f9fafb;border:1px solid #000}
+  /* V6.24 — membre décédé : avatar grisée + nom avec croix */
+  .avatar-deces{filter:grayscale(1) opacity(.65);border:1px solid #374151}
+  .member-row-deces td{background:#f9fafb}
+  .member-row-deces .member-name{position:relative;padding-left:14px}
+  .member-row-deces .member-name::before{content:'✝';position:absolute;left:0;top:50%;transform:translateY(-50%);color:#6b7280;font-weight:600}
+
   /* Badges cliquables (Relevé Membre) */
   .badge-clickable{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
   .badge-clickable:hover{transform:translateY(-1px);filter:brightness(.96);box-shadow:0 2px 6px rgba(0,0,0,0.12)}
@@ -202,6 +210,22 @@
   .birthday-joint-names div{padding:2px 0;border-bottom:1px dashed var(--purple-200,#e9d5ff)}
   .birthday-joint-names div:last-child{border-bottom:none}
   .birthday-joint-ages{font-size:11px;color:var(--purple-700);font-weight:600;margin-left:4px}
+  /* V6.25 — In Memoriam : carte sobre pour honorer les membres décédés */
+  .memoriam-list{display:flex;flex-direction:column;gap:8px}
+  .memoriam-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;background:linear-gradient(135deg,#1f2937,#111827);border:1px solid #374151;box-shadow:0 1px 3px rgba(0,0,0,0.15);position:relative;overflow:hidden}
+  .memoriam-item.today{border-color:#9ca3af;box-shadow:0 0 0 2px #6b7280 inset}
+  .memoriam-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#6b7280,#374151)}
+  .memoriam-icon{font-size:24px;width:40px;height:40px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;flex-shrink:0;filter:grayscale(1)}
+  .memoriam-item.today .memoriam-icon{background:#4b5563}
+  .memoriam-info{flex:1;min-width:0}
+  .memoriam-name{font-weight:600;color:#f9fafb;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .memoriam-name .cross{color:#9ca3af;margin-right:4px;font-weight:500}
+  .memoriam-meta{font-size:12px;color:#d1d5db;margin-top:3px;line-height:1.4}
+  .memoriam-meta .label{color:#9ca3af;font-style:italic}
+  .memoriam-days{font-size:12px;font-weight:700;color:#1f2937;background:#e5e7eb;border:1px solid #9ca3af;padding:4px 10px;border-radius:999px;flex-shrink:0;white-space:nowrap}
+  .memoriam-item.today .memoriam-days{background:white;color:#111827;border-color:white}
+  .memoriam-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;color:#1f2937;background:#e5e7eb;border:1px solid #9ca3af;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;text-transform:uppercase}
+
 
   /* Stats grid */
   .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px}
@@ -557,7 +581,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.23</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.25</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -621,7 +645,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.23',
+    'sidebar.version': 'APD-MINAT • Version 6.25',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -723,6 +747,24 @@ const TRANSLATIONS = {
     'members.female': 'Féminin',
     'members.active': 'Actif',
     'members.inactive': 'Inactif',
+    'members.deceased': 'Décès',
+    'members.dateDeces': 'Date de décès',
+    'members.dateDecesHint': 'Renseignez la date du décès (optionnel mais recommandé pour archive).',
+    'members.deceasedHint': 'Un membre décédé est inactif mais distingué des autres membres inactifs. Il n\'apparaît plus dans les listes actives (cotisations, événements, anniversaires).',
+    // V6.25 — In Memoriam (membres décédés)
+    'memoriam.title': '🕯️ In Memoriam',
+    'memoriam.subtitle': 'Hommage aux membres disparus, à l\'approche de leur date de naissance',
+    'memoriam.empty': 'Aucune date de naissance à commémorer dans les',
+    'memoriam.nextDays': 'prochains jours',
+    'memoriam.wouldHaveTurned': 'aurait eu',
+    'memoriam.yearsOld': 'ans',
+    'memoriam.diedOn': 'Décédé(e) le',
+    'memoriam.today': 'Aujourd\'hui',
+    'memoriam.tomorrow': 'Demain',
+    'memoriam.inDays': 'Dans',
+    'memoriam.days': 'jours',
+    'memoriam.members': 'membre(s)',
+    'memoriam.inMemoryOf': 'En mémoire de',
     // Bureau page
     'bureau.title': '🏛️ Bureau Exécutif',
     'bureau.subtitle': 'Membres du bureau de l\'Amicale',
@@ -904,6 +946,7 @@ const TRANSLATIONS = {
     // Status
     'status.Actif': 'Actif',
     'status.Inactif': 'Inactif',
+    'status.Deces': 'Décès',
   },
   en: {
     // Login screen
@@ -945,7 +988,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.23',
+    'sidebar.version': 'APD-MINAT • Version 6.25',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -1047,6 +1090,24 @@ const TRANSLATIONS = {
     'members.female': 'Female',
     'members.active': 'Active',
     'members.inactive': 'Inactive',
+    'members.deceased': 'Deceased',
+    'members.dateDeces': 'Date of death',
+    'members.dateDecesHint': 'Enter the date of death (optional but recommended for archive).',
+    'members.deceasedHint': 'A deceased member is inactive but distinguished from other inactive members. They no longer appear in active lists (contributions, events, birthdays).',
+    // V6.25 — In Memoriam (deceased members)
+    'memoriam.title': '🕯️ In Memoriam',
+    'memoriam.subtitle': 'Tribute to departed members, as their birth date approaches',
+    'memoriam.empty': 'No birth date to commemorate in the next',
+    'memoriam.nextDays': 'days',
+    'memoriam.wouldHaveTurned': 'would have turned',
+    'memoriam.yearsOld': 'years old',
+    'memoriam.diedOn': 'Passed away on',
+    'memoriam.today': 'Today',
+    'memoriam.tomorrow': 'Tomorrow',
+    'memoriam.inDays': 'In',
+    'memoriam.days': 'days',
+    'memoriam.members': 'member(s)',
+    'memoriam.inMemoryOf': 'In memory of',
     // Bureau page
     'bureau.title': '🏛️ Executive Board',
     'bureau.subtitle': "Association's board members",
@@ -3064,6 +3125,38 @@ function getUpcomingBirthdays(daysWindow = NB_JOURS_AVANT_ANNIV){
   return result;
 }
 
+// V6.25 — In Memoriam : calcule les prochaines dates de naissance à commémorer
+// pour les membres décédés (statut === 'Décès').
+// Format de retour : [{ member, date, days, age, dateDeces }]
+//   - date : prochaine occurrence de la date de naissance (anniversaire)
+//   - days : nombre de jours avant cette date (0 = aujourd'hui)
+//   - age  : âge que le membre AURAIT eu (peut être null si année inconnue)
+//   - dateDeces : date de décès (pour affichage)
+// ⚠️ Utilise TOUJOURS m.dateNaissance (jamais dateFeteConjointe) — In Memoriam
+//    honore la date réelle de naissance du membre disparu.
+function getUpcomingMemoriam(daysWindow = NB_JOURS_AVANT_ANNIV){
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const result = (state.members || [])
+    .filter(m => m.statut === 'Décès' && m.dateNaissance)
+    .map(m => {
+      const parts = String(m.dateNaissance).split('-');
+      if(parts.length !== 3) return null;
+      const mm = parseInt(parts[1], 10), dd = parseInt(parts[2], 10);
+      if(!mm || !dd) return null;
+      let next = new Date(today.getFullYear(), mm - 1, dd);
+      next.setHours(0,0,0,0);
+      if(next < today) next = new Date(today.getFullYear() + 1, mm - 1, dd);
+      const days = Math.round((next - today) / 86400000);
+      const birthYear = parseInt(parts[0], 10);
+      const age = birthYear ? (next.getFullYear() - birthYear) : null;
+      return { member: m, date: next, days, age, dateDeces: m.dateDeces || null };
+    })
+    .filter(x => x && x.days >= 0 && x.days <= daysWindow)
+    .sort((a, b) => a.days - b.days);
+  return result;
+}
+
 /* ---------- TOAST ---------- */
 function toast(title, desc, type='success'){
   const c = document.getElementById('toastContainer');
@@ -5077,6 +5170,36 @@ MODULES.dashboard = function(){
       </div>
     </div>
     ${(() => {
+      // V6.25 — Carte In Memoriam (membres décédés)
+      const memoriam = getUpcomingMemoriam(NB_JOURS_AVANT_ANNIV);
+      if(memoriam.length === 0) return '';
+      return `<div class="card"><div class="card-header"><div class="card-title">${t('memoriam.title')}</div>
+        <span class="badge badge-gray">${memoriam.length} ${t('memoriam.members')}</span>
+      </div>
+        <div class="card-body">
+          <div class="text-xs text-muted" style="margin-bottom:8px;font-style:italic">${t('memoriam.subtitle')}</div>
+          <div class="memoriam-list">
+            ${memoriam.map(m => {
+              const isToday = m.days === 0;
+              const label = isToday ? t('memoriam.today') : (m.days === 1 ? t('memoriam.tomorrow') : `${t('memoriam.inDays')} ${m.days} ${t('memoriam.days')}`);
+              const dateTxt = m.date.toLocaleDateString('fr-FR', { day:'2-digit', month:'long' });
+              const ageTxt = m.age != null ? `${t('memoriam.wouldHaveTurned')} ${m.age} ${t('memoriam.yearsOld')}` : '';
+              const decesTxt = m.dateDeces ? `${t('memoriam.diedOn')} ${formatDate(m.dateDeces)}` : '';
+              const photoHtml = m.member.photo ? `<img src="${m.member.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;filter:grayscale(1) opacity(.85)">` : '🕊️';
+              return `<div class="memoriam-item ${isToday?'today':''}">
+                <div class="memoriam-icon">${photoHtml}</div>
+                <div class="memoriam-info">
+                  <div class="memoriam-name"><span class="cross">✝</span>${escapeHtml(getMemberFullName(m.member))}<span class="memoriam-badge">In Memoriam</span></div>
+                  <div class="memoriam-meta">${dateTxt}${ageTxt ? ' · <span class="label">' + ageTxt + '</span>' : ''}${decesTxt ? ' · ' + decesTxt : ''}</div>
+                </div>
+                <div class="memoriam-days" title="Date anniversaire : ${m.date.toLocaleDateString('fr-FR')}">${label}</div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+    })()}
+    ${(() => {
       // Carte "Prochains anniversaires conjoints" — affichée uniquement si au moins un groupe conjoint est à venir
       const jointUpcoming = upcomingBirthdays.filter(b => b.isJoint && b.members.length > 1);
       if(jointUpcoming.length === 0) return ''; // Pas de carte si aucun groupe à venir
@@ -5167,6 +5290,7 @@ MODULES.members = function(){
           <option value="all" ${membersFilter.status==='all'?'selected':''}>${t('common.all')}</option>
           <option value="Actif" ${membersFilter.status==='Actif'?'selected':''}>${t('members.active')}</option>
           <option value="Inactif" ${membersFilter.status==='Inactif'?'selected':''}>${t('members.inactive')}</option>
+          <option value="Décès" ${membersFilter.status==='Décès'?'selected':''}>🕯️ ${t('members.deceased')}</option>
         </select>
       </div>
     </div></div>
@@ -5270,7 +5394,7 @@ function openBirthdayGroupDialog(groupId){
               const age = calculerAge(m);
               return `<tr>
                 <td>
-                  <div class="font-semibold">${escapeHtml(getMemberFullName(m))}</div>
+                  <div class="font-semibold member-name">${escapeHtml(getMemberFullName(m))}</div>
                   <div class="text-xs text-muted">${escapeHtml(m.telephone||'-')}</div>
                 </td>
                 <td class="text-sm">${formatDate(m.dateNaissance)||'-'}</td>
@@ -5764,8 +5888,9 @@ function buildMembersTable(){
           tooltipParts.push(`Solde disponible: ${formatCurrency(secoursBalance)}`);
         }
         const tooltip = tooltipParts.join(' | ');
-        return `<tr>
-          <td><div class="avatar">${m.photo?`<img src="${m.photo}">`:`${m.prenoms[0]||''}${m.nom[0]||''}`}</div></td>
+        const _deces = m.statut === 'Décès';
+        return `<tr class="${_deces?'member-row-deces':''}">
+          <td><div class="avatar ${_deces?'avatar-deces':''}">${m.photo?`<img src="${m.photo}">`:`${m.prenoms[0]||''}${m.nom[0]||''}`}</div></td>
           <td>
             <div class="font-semibold">${escapeHtml(getMemberFullName(m))}</div>
             <div class="text-xs text-muted" style="margin-top:2px;line-height:1.3">${formatAge(m)}${m.adresseEmail?(formatAge(m)?' • ':'')+escapeHtml(m.adresseEmail):''}</div>
@@ -5778,11 +5903,11 @@ function buildMembersTable(){
             ${secoursWithdrawn > 0 ? `<div class="text-xs" style="margin-top:3px;line-height:1.1">Solde: <span class="${secoursBalance>0?'text-emerald':'text-red'} font-semibold">${formatCurrency(secoursBalance)}</span></div>` : ''}
           </td>
           <td class="hidden-md text-sm">${escapeHtml(m.grade||'-')}</td>
-          <td><span class="badge ${m.statut==='Actif'?'badge-emerald-solid':'badge-gray'}">${m.statut}</span></td>
+          <td><span class="badge ${m.statut==='Actif'?'badge-emerald-solid':m.statut==='Décès'?'badge-deces':'badge-gray'}">${m.statut==='Décès'?'🕯️ '+m.statut:m.statut}</span>${m.statut==='Décès' && m.dateDeces?`<div class="text-xs" style="margin-top:3px;color:#6b7280;line-height:1.1">Décédé le ${formatDate(m.dateDeces)}</div>`:''}</td>
           <td><div class="table-actions">
             <button class="btn btn-ghost btn-icon btn-icon-view" title="Voir" onclick="viewMember('${m.id}')">👁</button>
             ${isAdmin()?`<button class="btn btn-ghost btn-icon btn-icon-edit" title="Modifier" onclick="openMemberDialog('${m.id}')">✏</button>
-            <button class="btn btn-ghost btn-icon" title="${m.statut==='Actif'?'Désactiver le membre':'Réactiver le membre'}" style="${m.statut==='Actif'?'color:var(--amber, #d97706)':'color:var(--emerald, #059669)'}" onclick="toggleMemberStatus('${m.id}')">${m.statut==='Actif'?'🔒':'🔄'}</button>
+${m.statut==='Décès'?'':`<button class="btn btn-ghost btn-icon" title="${m.statut==='Actif'?'Désactiver le membre':'Réactiver le membre'}" style="${m.statut==='Actif'?'color:var(--amber, #d97706)':'color:var(--emerald, #059669)'}" onclick="toggleMemberStatus('${m.id}')">${m.statut==='Actif'?'🔒':'🔄'}</button>`}
             <button class="btn btn-ghost btn-icon btn-icon-del" title="Supprimer" onclick="deleteMember('${m.id}')">🗑</button>`:''}
           </div></td>
         </tr>`;
@@ -5800,7 +5925,7 @@ function openMemberDialog(id){
     dateNaissance:'', lieuNaissance:'', statutMatrimonial:'Célibataire', nomPere:'', nomMere:'',
     nombreEnfantsCharge:0, poste:'', grade:'', direction:'',
     inscription:FRAIS_INSCRIPTION, reinscription:0, dateInscription:new Date().toISOString().split('T')[0],
-    statut:'Actif', dateFeteConjointe:'', groupeFeteId:''
+    statut:'Actif', dateFeteConjointe:'', groupeFeteId:'', dateDeces:''
   };
   // Liste des groupes de fête existants (pour le sélecteur)
   const existingGroups = getBirthdayGroups().filter(g => g.members.length > 0);
@@ -5859,10 +5984,20 @@ function openMemberDialog(id){
       <div class="form-group"><label>Frais d'inscription (FCFA)</label><input type="number" value="${memberForm.inscription||0}" onchange="memberForm.inscription=parseInt(this.value)||0"></div>
       <div class="form-group"><label>Réinscription (FCFA)</label><input type="number" value="${memberForm.reinscription||0}" onchange="memberForm.reinscription=parseInt(this.value)||0"></div>
     </div>
-    <div class="form-row full"><div class="form-group"><label>Statut</label><select onchange="memberForm.statut=this.value">
-      <option ${memberForm.statut==='Actif'?'selected':''}>${t('members.active')}</option>
-      <option ${memberForm.statut==='Inactif'?'selected':''}>${t('members.inactive')}</option>
+    <div class="form-row full"><div class="form-group"><label>Statut</label><select id="memberStatusSelect" onchange="memberForm.statut=this.value; toggleDecesField(this.value)">
+      <option value="Actif" ${memberForm.statut==='Actif'?'selected':''}>${t('members.active')}</option>
+      <option value="Inactif" ${memberForm.statut==='Inactif'?'selected':''}>${t('members.inactive')}</option>
+      <option value="Décès" ${memberForm.statut==='Décès'?'selected':''}>🕯️ ${t('members.deceased')}</option>
     </select></div></div>
+    <div id="decesField" class="form-row full" style="display:none;margin-top:-6px">
+      <div class="form-group"><label>${t('members.dateDeces')}</label>
+        <input type="date" value="${memberForm.dateDeces||''}" onchange="memberForm.dateDeces=this.value">
+        <small class="text-muted">${t('members.dateDecesHint')}</small>
+      </div>
+    </div>
+    <div id="decesHint" class="form-alert warning" style="display:none;font-size:12px">
+      ${t('members.deceasedHint')}
+    </div>
     <details class="mt-3" style="border-top:1px solid var(--border);padding-top:12px">
       <summary style="cursor:pointer;font-weight:600;color:var(--purple-700)">🎉 Anniversaire conjoint (optionnel)</summary>
       <div class="form-alert info mt-2" style="font-size:12px">
@@ -5891,6 +6026,8 @@ function openMemberDialog(id){
     <button class="btn btn-primary" onclick="saveMember()">${id?'Modifier':'Enregistrer'}</button>
   `;
   openModal(id?'<span>✏</span> Modifier le Membre':'<span>➕</span> Nouveau Membre', body, footer);
+  // V6.24 — Initialise l'affichage du champ dateDeces
+  setTimeout(() => toggleDecesField(memberForm.statut), 0);
   // Gère l'affichage du champ "nouveau groupe"
   setTimeout(() => {
     const sel = document.querySelector('select[onchange*="groupeFeteId"]');
@@ -5905,6 +6042,26 @@ function openMemberDialog(id){
   }, 50);
 }
 
+// V6.24 — Affiche/masque le champ dateDeces + hint selon le statut choisi
+function toggleDecesField(status){
+  const f = document.getElementById('decesField');
+  const h = document.getElementById('decesHint');
+  if(!f || !h) return;
+  const isDeces = status === 'Décès';
+  f.style.display = isDeces ? '' : 'none';
+  h.style.display = isDeces ? '' : 'none';
+  if(isDeces && !memberForm.dateDeces){
+    memberForm.dateDeces = new Date().toISOString().split('T')[0];
+    const inp = f.querySelector('input[type=date]');
+    if(inp) inp.value = memberForm.dateDeces;
+  }
+  if(!isDeces && memberForm.dateDeces){
+    memberForm.dateDeces = '';
+    const inp = f.querySelector('input[type=date]');
+    if(inp) inp.value = '';
+  }
+}
+
 function handlePhotoUpload(file){
   if(!file) return;
   fileToBase64(file, b64 => {
@@ -5915,6 +6072,9 @@ function handlePhotoUpload(file){
 }
 
 function saveMember(){
+  // V6.24 — Cohérence : si le statut n'est pas 'Décès', on vide la dateDeces
+  if(memberForm.statut !== 'Décès'){ memberForm.dateDeces = ''; }
+
   if(!memberForm.nom || !memberForm.prenoms){ toast('Validation','Le nom et le prénom sont obligatoires.','error'); return; }
   // Gestion du cas "Créer un nouveau groupe"
   if(memberForm.groupeFeteId === '__new__'){
@@ -6000,6 +6160,7 @@ function toggleMemberStatus(id){
   if(!isAdmin()){ toast('Accès refusé','Seuls les administrateurs peuvent modifier.','error'); return; }
   const m = getMemberById(id);
   if(!m) return;
+  if(m.statut === 'Décès'){ toast('Action impossible', 'Un membre décédé ne peut pas être réactivé via ce bouton. Modifiez-le via le formulaire pour corriger le statut.', 'warning'); return; }
   const newStatus = m.statut === 'Actif' ? 'Inactif' : 'Actif';
   const idx = state.members.findIndex(x => x.id === id);
   state.members[idx] = { ...state.members[idx], statut: newStatus, updatedAt: new Date().toISOString() };
@@ -6041,7 +6202,7 @@ function viewMember(id){
       <div class="avatar xl">${m.photo?`<img src="${m.photo}">`:`${m.prenoms[0]||''}${m.nom[0]||''}`}</div>
       <div><h3 style="font-size:18px;font-weight:bold">${escapeHtml(getMemberFullName(m))}</h3>
       <p class="text-muted text-sm">${escapeHtml(m.poste||'')} ${m.grade?'• '+escapeHtml(m.grade):''}</p>
-      <span class="badge ${m.statut==='Actif'?'badge-emerald-solid':'badge-gray'} mt-1">${m.statut}</span></div>
+      <span class="badge ${m.statut==='Actif'?'badge-emerald-solid':m.statut==='Décès'?'badge-deces':'badge-gray'} mt-1">${m.statut==='Décès'?'🕯️ '+m.statut:m.statut}</span>${m.statut==='Décès' && m.dateDeces?`<div class="text-xs" style="margin-top:4px;color:#6b7280">Décédé le ${formatDate(m.dateDeces)}</div>`:''}</div>
     </div>
     <div class="grid-2 mb-3 text-sm">
       <div><strong>Genre:</strong> ${escapeHtml(m.genre)}</div>
@@ -7515,6 +7676,36 @@ MODULES.events = function(){
           </div>`}
       </div>
     </div>
+    ${(() => {
+      // V6.25 — Section In Memoriam sur la page Événements
+      const memoriam = getUpcomingMemoriam(NB_JOURS_AVANT_ANNIV);
+      if(memoriam.length === 0) return '';
+      return `<div class="card"><div class="card-header"><div class="card-title">${t('memoriam.title')}</div>
+        <span class="badge badge-gray">${memoriam.length} ${t('memoriam.members')}</span>
+      </div>
+        <div class="card-body">
+          <div class="text-xs text-muted" style="margin-bottom:8px;font-style:italic">${t('memoriam.subtitle')}</div>
+          <div class="memoriam-list">
+            ${memoriam.map(m => {
+              const isToday = m.days === 0;
+              const label = isToday ? t('memoriam.today') : (m.days === 1 ? t('memoriam.tomorrow') : `${t('memoriam.inDays')} ${m.days} ${t('memoriam.days')}`);
+              const dateTxt = m.date.toLocaleDateString('fr-FR', { day:'2-digit', month:'long' });
+              const ageTxt = m.age != null ? `${t('memoriam.wouldHaveTurned')} ${m.age} ${t('memoriam.yearsOld')}` : '';
+              const decesTxt = m.dateDeces ? `${t('memoriam.diedOn')} ${formatDate(m.dateDeces)}` : '';
+              const photoHtml = m.member.photo ? `<img src="${m.member.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;filter:grayscale(1) opacity(.85)">` : '🕊️';
+              return `<div class="memoriam-item ${isToday?'today':''}">
+                <div class="memoriam-icon">${photoHtml}</div>
+                <div class="memoriam-info">
+                  <div class="memoriam-name"><span class="cross">✝</span>${escapeHtml(getMemberFullName(m.member))}<span class="memoriam-badge">In Memoriam</span></div>
+                  <div class="memoriam-meta">${dateTxt}${ageTxt ? ' · <span class="label">' + ageTxt + '</span>' : ''}${decesTxt ? ' · ' + decesTxt : ''}</div>
+                </div>
+                <div class="memoriam-days" title="Date anniversaire : ${m.date.toLocaleDateString('fr-FR')}">${label}</div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+    })()}
     <div class="form-alert warning" style="margin-bottom:12px;font-size:13px">
       <strong>Pénalités d\u2019absence (événements Décès) :</strong>
       Absence à la levée de corps = ${formatCurrency(PENALITE_ABSENCE_LEVEE_CORPS)} ·
@@ -9173,10 +9364,12 @@ function getBilanData(year){
 
   // Membres
   data.totalMembres = (state.members || []).length;
+  if(data.membresDecedes === undefined) data.membresDecedes = 0;
   (state.members || []).forEach(m => {
     if(m.statut === 'Actif') data.membresActifs++;
     if(m.dateInscription && inYear(m.dateInscription)) data.nouveauxInscrits++;
-    if(m.statut && m.statut !== 'Actif') data.membresRadiés++;
+    if(m.statut === 'Décès') data.membresDecedes++;
+    else if(m.statut && m.statut !== 'Actif') data.membresRadiés++;
   });
 
   // Cotisations Secours/Projet de l'année
