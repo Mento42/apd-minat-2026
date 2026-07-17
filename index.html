@@ -557,7 +557,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.21</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.22</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -621,7 +621,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.21',
+    'sidebar.version': 'APD-MINAT • Version 6.22',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -945,7 +945,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.21',
+    'sidebar.version': 'APD-MINAT • Version 6.22',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -2411,6 +2411,18 @@ function loadState(){
           if(data.activeSessions && typeof data.activeSessions === 'object'){
             state.activeSessions = data.activeSessions;
           }
+          // 🛡️ V6.22 : préserver les messages de la messagerie interne.
+          // Sans cela, tout message envoyé est perdu au prochain chargement quand les
+          // données embarquées ont autant ou plus de membres que les données locales
+          // (cas normal !). state.messages est réinitialisé à [] par le state par défaut.
+          if(Array.isArray(data.messages) && data.messages.length > 0){
+            state.messages = data.messages;
+            console.log('🛡️ V6.22: messages locaux préservés (', data.messages.length, 'message(s))');
+          }
+          // 🛡️ V6.22 : préserver aussi pendingAdminLogins (notifications admin) — même cause.
+          if(Array.isArray(data.pendingAdminLogins)){
+            state.pendingAdminLogins = data.pendingAdminLogins;
+          }
         }
       }
       // Si pas de données locales, on garde les données embarquées (déjà dans state)
@@ -2446,6 +2458,14 @@ function loadState(){
           }
           if(parsed.activeSessions && typeof parsed.activeSessions === 'object'){
             state.activeSessions = parsed.activeSessions;
+          }
+          // 🛡️ V6.22 : préserver messages + pendingAdminLogins (même logique que la branche IDB)
+          if(Array.isArray(parsed.messages) && parsed.messages.length > 0){
+            state.messages = parsed.messages;
+            console.log('🛡️ V6.22: messages locaux préservés (localStorage,', parsed.messages.length, 'message(s))');
+          }
+          if(Array.isArray(parsed.pendingAdminLogins)){
+            state.pendingAdminLogins = parsed.pendingAdminLogins;
           }
         }
       }
@@ -3237,6 +3257,11 @@ function applyPublishedData(data){
   const preservedActiveModule = state.activeModule;
   const preservedAuditLog = state.auditLog;
   const preservedActiveSessions = state.activeSessions;
+  // 🛡️ V6.22 : préserver aussi messages + pendingAdminLogins — sinon un membre qui se
+  // reconnecte perd tous ses messages reçus (applyPublishedData écrase state avec data
+  // qui ne contient pas messages).
+  const preservedMessages = state.messages;
+  const preservedPendingAdminLogins = state.pendingAdminLogins;
   // On fusionne : data primero, puis on garantit que DEFAULT_USERS est présent
   state = { ...state, ...data };
   // 🌐 V6.16 : restaure la config sync préservée (force Supabase cloud)
@@ -3254,6 +3279,9 @@ function applyPublishedData(data){
   // Restaure aussi le journal d'audit et les sessions actives locaux
   if(Array.isArray(preservedAuditLog)) state.auditLog = preservedAuditLog;
   if(preservedActiveSessions && typeof preservedActiveSessions === 'object') state.activeSessions = preservedActiveSessions;
+  // 🛡️ V6.22 : restaure les messages et notifications admin locales
+  if(Array.isArray(preservedMessages)) state.messages = preservedMessages;
+  if(Array.isArray(preservedPendingAdminLogins)) state.pendingAdminLogins = preservedPendingAdminLogins;
   state.currentUser = currentUser; // On restaure l'utilisateur connecté
   // Marque l'état comme « lecture seule » pour les membres
   window._publishedDataMode = true;
@@ -9640,6 +9668,21 @@ async function pullFromCloud(force){
       }
     }
     // Fusionne : on garde sync/currentUser/users/activeModule locaux, on prend le reste du cloud
+    // 🛡️ V6.22 : les messages sont MERGÉS par ID (union) au lieu d'être écrasés.
+    // Sans cela, un pull silencieux automatique (toutes les 30s + au reload + au focus)
+    // écrase les messages locaux par la version cloud — qui peut être plus ancienne
+    // (par ex. quand un message vient d'être envoyé mais pas encore pushé).
+    // Stratégie : union par ID, priorité au message local en cas de conflit (le local
+    // est toujours au moins aussi récent que le cloud pour les messages créés ici).
+    const _localMsgs = Array.isArray(state.messages) ? state.messages : [];
+    const _cloudMsgs = Array.isArray(cloud.data.messages) ? cloud.data.messages : [];
+    const _mergedMsgsMap = new Map();
+    _cloudMsgs.forEach(m => { if (m && m.id) _mergedMsgsMap.set(m.id, m); });
+    _localMsgs.forEach(m => { if (m && m.id) _mergedMsgsMap.set(m.id, m); });
+    const _mergedMessages = Array.from(_mergedMsgsMap.values());
+    // 🛡️ V6.22 : pendingAdminLogins est local (notifications pour l'admin technique) —
+    // ne jamais l'écraser par la version cloud.
+    const _preservedPendingAdminLogins = state.pendingAdminLogins;
     const preserved = {
       sync: state.sync,
       currentUser: state.currentUser,
@@ -9647,6 +9690,8 @@ async function pullFromCloud(force){
       users: state.users,
       auditLog: state.auditLog,         // Journal d'audit local (Task 46)
       activeSessions: state.activeSessions, // Sessions actives locales (Task 46)
+      messages: _mergedMessages,        // V6.22 : messages mergés (union par ID)
+      pendingAdminLogins: _preservedPendingAdminLogins, // V6.22 : notifications locales
     };
     state = Object.assign({}, cloud.data, preserved);
     // Met à jour les méta sync
