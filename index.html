@@ -226,6 +226,30 @@
   .memoriam-item.today .memoriam-days{background:white;color:#111827;border-color:white}
   .memoriam-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;color:#1f2937;background:#e5e7eb;border:1px solid #9ca3af;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;text-transform:uppercase}
 
+  /* V6.26 — Bouton + modal "Voir tous les membres disparus" */
+  .deceased-modal-body{max-height:70vh;overflow-y:auto;padding-right:6px}
+  .deceased-modal-list{display:flex;flex-direction:column;gap:10px}
+  .deceased-modal-item{display:flex;align-items:flex-start;gap:14px;padding:14px;border-radius:10px;background:linear-gradient(135deg,#1f2937,#111827);border:1px solid #374151;box-shadow:0 1px 3px rgba(0,0,0,0.15);position:relative;overflow:hidden}
+  .deceased-modal-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#6b7280,#374151)}
+  .deceased-modal-icon{font-size:24px;width:48px;height:48px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;filter:grayscale(1)}
+  .deceased-modal-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%;filter:grayscale(1) opacity(.9)}
+  .deceased-modal-info{flex:1;min-width:0;color:#f9fafb}
+  .deceased-modal-name{font-weight:600;font-size:15px;color:#f9fafb;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .deceased-modal-name .cross{color:#9ca3af;font-weight:500}
+  .deceased-modal-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;color:#1f2937;background:#e5e7eb;border:1px solid #9ca3af;padding:2px 8px;border-radius:999px;text-transform:uppercase}
+  .deceased-modal-meta{font-size:12px;color:#d1d5db;margin-top:6px;line-height:1.5}
+  .deceased-modal-meta .label{color:#9ca3af;font-style:italic}
+  .deceased-modal-meta .sep{color:#4b5563;margin:0 4px}
+  .deceased-modal-actions{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+  .deceased-modal-actions .btn{font-size:12px;padding:4px 10px}
+  .deceased-modal-empty{padding:32px 16px;text-align:center;color:#9ca3af;font-style:italic}
+  .deceased-modal-summary{padding:10px 14px;border-radius:8px;background:#f3f4f6;border:1px solid #e5e7eb;margin-bottom:14px;font-size:13px;color:#374151}
+  .deceased-modal-summary strong{color:#111827}
+  .btn-deceased-list{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#1f2937,#374151);color:#f9fafb;border:1px solid #4b5563;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s ease;box-shadow:0 1px 2px rgba(0,0,0,0.1)}
+  .btn-deceased-list:hover{background:linear-gradient(135deg,#111827,#1f2937);border-color:#6b7280;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+  .btn-deceased-list .icon{font-size:16px}
+  .btn-deceased-list .count{background:#e5e7eb;color:#111827;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:4px}
+
 
   /* Stats grid */
   .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px}
@@ -581,7 +605,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.25</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.26</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -645,7 +669,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.25',
+    'sidebar.version': 'APD-MINAT • Version 6.26',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -765,6 +789,20 @@ const TRANSLATIONS = {
     'memoriam.days': 'jours',
     'memoriam.members': 'membre(s)',
     'memoriam.inMemoryOf': 'En mémoire de',
+    // V6.26 — Bouton + modal "Voir tous les membres disparus"
+    'memoriam.viewAll': 'Voir tous les membres disparus',
+    'memoriam.modalTitle': '🕯️ Membres disparus',
+    'memoriam.modalSubtitle': 'Hommage à tous les membres de l\'Amicale qui nous ont quittés',
+    'memoriam.modalSummary': '<strong>{count}</strong> membre(s) disparu(s) • Liste complète',
+    'memoriam.modalEmpty': 'Aucun membre disparu enregistré. Paix à leur âme.',
+    'memoriam.bornOn': 'Né(e) le',
+    'memoriam.diedAt': 'décédé(e) à',
+    'memoriam.yearsOldAge': 'ans',
+    'memoriam.wouldBe': 'aurait eu',
+    'memoriam.thisYear': 'cette année',
+    'memoriam.viewProfile': 'Voir la fiche',
+    'memoriam.noBirthDate': 'Date de naissance non renseignée',
+    'memoriam.noDeathDate': 'Date de décès non renseignée',
     // Bureau page
     'bureau.title': '🏛️ Bureau Exécutif',
     'bureau.subtitle': 'Membres du bureau de l\'Amicale',
@@ -988,7 +1026,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.25',
+    'sidebar.version': 'APD-MINAT • Version 6.26',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -1108,6 +1146,20 @@ const TRANSLATIONS = {
     'memoriam.days': 'days',
     'memoriam.members': 'member(s)',
     'memoriam.inMemoryOf': 'In memory of',
+    // V6.26 — Button + modal "View all deceased members"
+    'memoriam.viewAll': 'View all deceased members',
+    'memoriam.modalTitle': '🕯️ Deceased members',
+    'memoriam.modalSubtitle': "Tribute to all members of the Association who have passed away",
+    'memoriam.modalSummary': '<strong>{count}</strong> deceased member(s) • Complete list',
+    'memoriam.modalEmpty': 'No deceased member registered. May they rest in peace.',
+    'memoriam.bornOn': 'Born on',
+    'memoriam.diedAt': 'passed away at',
+    'memoriam.yearsOldAge': 'years old',
+    'memoriam.wouldBe': 'would have turned',
+    'memoriam.thisYear': 'this year',
+    'memoriam.viewProfile': 'View profile',
+    'memoriam.noBirthDate': 'Birth date not provided',
+    'memoriam.noDeathDate': 'Date of death not provided',
     // Bureau page
     'bureau.title': '🏛️ Executive Board',
     'bureau.subtitle': "Association's board members",
@@ -3157,6 +3209,102 @@ function getUpcomingMemoriam(daysWindow = NB_JOURS_AVANT_ANNIV){
   return result;
 }
 
+// ============================================================================
+// V6.26 — Ouvre un modal avec la liste COMPLÈTE des membres disparus
+// ============================================================================
+// Affiche tous les membres avec statut === 'Décès' (peu importe la date de
+// naissance), triés par date de décès décroissante (plus récent en premier).
+function openDeceasedMembersModal(){
+  const deceased = (state.members || [])
+    .filter(m => m.statut === 'Décès')
+    .sort((a, b) => {
+      // Tri par date de décès décroissante (plus récent d'abord)
+      const da = a.dateDeces ? new Date(a.dateDeces).getTime() : 0;
+      const db = b.dateDeces ? new Date(b.dateDeces).getTime() : 0;
+      if(db !== da) return db - da;
+      // Fallback : par nom
+      return (a.nom || '').localeCompare(b.nom || '');
+    });
+
+  const currentYear = new Date().getFullYear();
+  const summary = deceased.length === 0
+    ? t('memoriam.modalEmpty')
+    : t('memoriam.modalSummary').replace('{count}', deceased.length);
+
+  let listHtml;
+  if(deceased.length === 0){
+    listHtml = `<div class="deceased-modal-empty">${t('memoriam.modalEmpty')}</div>`;
+  } else {
+    listHtml = `<div class="deceased-modal-list">` + deceased.map(m => {
+      // Photo du membre (ou initiales, ou 🕊️)
+      const photoHtml = m.photo
+        ? `<img src="${m.photo}" alt="">`
+        : (m.prenoms && m.nom ? `${escapeHtml(m.prenoms[0]||'')}${escapeHtml(m.nom[0]||'')}` : '🕊️');
+      // Date de naissance
+      const hasBirth = !!m.dateNaissance;
+      const birthTxt = hasBirth ? formatDate(m.dateNaissance) : t('memoriam.noBirthDate');
+      // Âge que le membre aurait eu cette année
+      let wouldHaveTxt = '';
+      if(hasBirth){
+        const birthYear = new Date(m.dateNaissance).getFullYear();
+        const wouldAge = currentYear - birthYear;
+        if(wouldAge > 0 && wouldAge < 130){
+          wouldHaveTxt = ` · <span class="label">${t('memoriam.wouldBe')} ${wouldAge} ${t('memoriam.yearsOld')} ${t('memoriam.thisYear')}</span>`;
+        }
+      }
+      // Date de décès
+      const hasDeath = !!m.dateDeces;
+      const deathTxt = hasDeath ? formatDate(m.dateDeces) : t('memoriam.noDeathDate');
+      // Âge au décès
+      let diedAtTxt = '';
+      if(hasBirth && hasDeath){
+        const birthYear = new Date(m.dateNaissance).getFullYear();
+        const deathYear = new Date(m.dateDeces).getFullYear();
+        const ageAtDeath = deathYear - birthYear;
+        if(ageAtDeath >= 0 && ageAtDeath < 130){
+          diedAtTxt = ` · <span class="label">${t('memoriam.diedAt')} ${ageAtDeath} ${t('memoriam.yearsOldAge')}</span>`;
+        }
+      }
+      // Téléphone + poste (info secondaire)
+      const extras = [];
+      if(m.telephone) extras.push('📞 ' + escapeHtml(m.telephone));
+      if(m.poste) extras.push(escapeHtml(m.poste));
+      const extrasTxt = extras.length ? ` · ${extras.join(' · ')}` : '';
+      // Bouton "Voir la fiche" (si la fonction viewMember existe)
+      const viewBtn = (typeof viewMember === 'function')
+        ? `<button class="btn btn-secondary" onclick="closeModal(); setTimeout(()=>viewMember('${m.id}'),100)">${t('memoriam.viewProfile')}</button>`
+        : '';
+      return `<div class="deceased-modal-item">
+        <div class="deceased-modal-icon">${photoHtml}</div>
+        <div class="deceased-modal-info">
+          <div class="deceased-modal-name">
+            <span class="cross">✝</span>${escapeHtml(getMemberFullName(m))}
+            <span class="deceased-modal-badge">In Memoriam</span>
+          </div>
+          <div class="deceased-modal-meta">
+            <strong>${t('memoriam.bornOn')}</strong> ${birthTxt}${wouldHaveTxt}
+            <span class="sep">·</span>
+            <strong>${t('memoriam.diedOn')}</strong> ${deathTxt}${diedAtTxt}
+            ${extrasTxt}
+          </div>
+          <div class="deceased-modal-actions">
+            ${viewBtn}
+          </div>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+
+  const body = `
+    <div class="deceased-modal-summary">${summary}</div>
+    <div class="text-xs text-muted" style="margin-bottom:10px;font-style:italic">${t('memoriam.modalSubtitle')}</div>
+    <div class="deceased-modal-body">${listHtml}</div>
+  `;
+  const footer = `<button class="btn btn-secondary" onclick="closeModal()">${t('common.close')||'Fermer'}</button>`;
+  openModal(t('memoriam.modalTitle'), body, footer, 'modal-lg');
+}
+
+
 /* ---------- TOAST ---------- */
 function toast(title, desc, type='success'){
   const c = document.getElementById('toastContainer');
@@ -5198,6 +5346,24 @@ MODULES.dashboard = function(){
           </div>
         </div>
       </div>`;
+    })()}
+    ${(() => {
+      // V6.26 — Bouton "Voir tous les membres disparus" (dashboard)
+      const deceasedCount = (state.members||[]).filter(m => m.statut === 'Décès').length;
+      if(deceasedCount === 0) return '';
+      return `<div class="card"><div class="card-body" style="padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,#1f2937,#111827);border-color:#374151">
+        <div style="color:#f9fafb">
+          <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px">
+            <span style="font-size:18px">🕊️</span> ${t('memoriam.inMemoryOf')}…
+          </div>
+          <div style="font-size:12px;color:#d1d5db;margin-top:2px">${t('memoriam.modalSubtitle')}</div>
+        </div>
+        <button class="btn-deceased-list" onclick="openDeceasedMembersModal()">
+          <span class="icon">🕯️</span>
+          <span>${t('memoriam.viewAll')}</span>
+          <span class="count">${deceasedCount}</span>
+        </button>
+      </div></div>`;
     })()}
     ${(() => {
       // Carte "Prochains anniversaires conjoints" — affichée uniquement si au moins un groupe conjoint est à venir
@@ -7705,6 +7871,24 @@ MODULES.events = function(){
           </div>
         </div>
       </div>`;
+    })()}
+    ${(() => {
+      // V6.26 — Bouton "Voir tous les membres disparus" (page événements)
+      const deceasedCount = (state.members||[]).filter(m => m.statut === 'Décès').length;
+      if(deceasedCount === 0) return '';
+      return `<div class="card"><div class="card-body" style="padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,#1f2937,#111827);border-color:#374151">
+        <div style="color:#f9fafb">
+          <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px">
+            <span style="font-size:18px">🕊️</span> ${t('memoriam.inMemoryOf')}…
+          </div>
+          <div style="font-size:12px;color:#d1d5db;margin-top:2px">${t('memoriam.modalSubtitle')}</div>
+        </div>
+        <button class="btn-deceased-list" onclick="openDeceasedMembersModal()">
+          <span class="icon">🕯️</span>
+          <span>${t('memoriam.viewAll')}</span>
+          <span class="count">${deceasedCount}</span>
+        </button>
+      </div></div>`;
     })()}
     <div class="form-alert warning" style="margin-bottom:12px;font-size:13px">
       <strong>Pénalités d\u2019absence (événements Décès) :</strong>
