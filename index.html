@@ -614,7 +614,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.29</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.30</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -678,7 +678,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.29',
+    'sidebar.version': 'APD-MINAT • Version 6.30',
     'v628.indivTitle': '👤 Comptes membres individuels',
     'v628.indivSubtitle': 'Créez un compte personnel pour chaque membre afin qu\'il puisse discuter en messagerie instantanée. Le membre se connectera avec son numéro de téléphone, son email ou son nom d\'utilisateur.',
     'v628.createIndivBtn': '➕ Créer un compte membre',
@@ -1068,7 +1068,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.29',
+    'sidebar.version': 'APD-MINAT • Version 6.30',
     'v628.indivTitle': '👤 Individual member accounts',
     'v628.indivSubtitle': 'Create a personal account for each member so they can chat in instant messaging. The member will log in with their phone number, email, or username.',
     'v628.createIndivBtn': '➕ Create member account',
@@ -1992,9 +1992,20 @@ const AUTO_TR = {
   "PV": "Minutes"
 };
 
-// Build a regex that matches any French phrase (longest first to avoid partial matches)
+// Build a regex that matches any French phrase (longest first to avoid partial matches).
+// 📨 V6.30 : pour les clés courtes (≤ 5 chars) purement alphabétiques, on ajoute des
+// \b (word boundaries) pour éviter de remplacer des sous-chaînes à l'intérieur d'autres
+// mots. Par exemple, "sur" ne doit PAS matcher à l'intérieur de "Treasurer" → "Treaoner".
+// Les clés longues ou contenant des espaces/emojis/punctuation restent en match littéral.
 const AUTO_TR_KEYS = Object.keys(AUTO_TR).sort((a, b) => b.length - a.length);
-const AUTO_TR_REGEX = new RegExp('(' + AUTO_TR_KEYS.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g');
+const AUTO_TR_REGEX = new RegExp('(' + AUTO_TR_KEYS.map(k => {
+  const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Si la clé est courte (≤ 5) et purement alphabétique (avec accents FR), ajoute \b
+  if(k.length <= 5 && /^[a-zA-ZàâäéèêëïîôöùûüÿçÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÇ]+$/.test(k)) {
+    return '\\b' + escaped + '\\b';
+  }
+  return escaped;
+}).join('|') + ')', 'g');
 
 function autoTranslateText(text){
   if(!text || typeof text !== 'string') return text;
@@ -4520,6 +4531,117 @@ function getUserDisplayLabel(username){
   return '👤 ' + username;
 }
 
+// 📨 V6.30 : Renvoie { title, description } pour un username donné.
+// Utilisé par les cartes de sélection de destinataire pour expliquer clairement
+// à l'utilisateur qui il va contacter et pour quel type de questions.
+function getRoleInfo(username){
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+               (typeof CURRENT_LANG === 'undefined');
+  // Rôles spécifiques par username (comptes par défaut)
+  if(username === 'admin'){
+    return {
+      title: isFr ? 'Administrateur technique' : 'Technical administrator',
+      desc:  isFr ? 'Assistance technique, mots de passe, bugs de l\'application'
+                  : 'Technical assistance, passwords, application bugs',
+      icon:  '🔧'
+    };
+  }
+  if(username === 'membre'){
+    return {
+      title: isFr ? 'Compte membre commun' : 'Shared member account',
+      desc:  isFr ? 'Diffusion à tous les membres ordinaires de l\'Amicale'
+                  : 'Broadcast to all ordinary members of the Association',
+      icon:  '👥'
+    };
+  }
+  // Cherche l'utilisateur dans state.users
+  const u = (state.users || []).find(x => x.username === username);
+  // Cas 1 : compte membre_indiv — affiche le vrai nom du membre lié
+  if(u && u.role === 'membre_indiv' && u.membreId){
+    const m = (typeof getMemberById === 'function') ? getMemberById(u.membreId) : null;
+    if(m){
+      const fullName = (typeof getMemberFullName === 'function') ? getMemberFullName(m) : (m.nom + ' ' + m.prenoms);
+      return {
+        title: fullName.trim(),
+        desc:  isFr ? 'Membre de l\'Amicale avec un compte personnel'
+                    : 'Association member with a personal account',
+        icon:  '👤'
+      };
+    }
+  }
+  // Cas 2 : admin avec bureauRole connu (Président, Secrétaire, Trésorier, Censeur)
+  if(u && u.bureauRole){
+    const role = (u.bureauRole || '').toLowerCase();
+    const map = {
+      'président': {
+        title: isFr ? 'Président du Bureau' : 'Bureau President',
+        desc:  isFr ? 'Questions générales, orientations stratégiques, réunions'
+                    : 'General questions, strategic directions, meetings',
+        icon:  '👔'
+      },
+      'president': {
+        title: isFr ? 'Président du Bureau' : 'Bureau President',
+        desc:  isFr ? 'Questions générales, orientations stratégiques, réunions'
+                    : 'General questions, strategic directions, meetings',
+        icon:  '👔'
+      },
+      'secrétaire général': {
+        title: isFr ? 'Secrétaire Général' : 'General Secretary',
+        desc:  isFr ? 'Convocations, procès-verbaux, correspondances'
+                    : 'Convocations, minutes, correspondence',
+        icon:  '📝'
+      },
+      'secretaire general': {
+        title: isFr ? 'Secrétaire Général' : 'General Secretary',
+        desc:  isFr ? 'Convocations, procès-verbaux, correspondances'
+                    : 'Convocations, minutes, correspondence',
+        icon:  '📝'
+      },
+      'trésorier': {
+        title: isFr ? 'Trésorier' : 'Treasurer',
+        desc:  isFr ? 'Cotisations, épargne, tontines, emprunts, secours'
+                    : 'Dues, savings, tontines, loans, relief funds',
+        icon:  '💰'
+      },
+      'tresorier': {
+        title: isFr ? 'Trésorier' : 'Treasurer',
+        desc:  isFr ? 'Cotisations, épargne, tontines, emprunts, secours'
+                    : 'Dues, savings, tontines, loans, relief funds',
+        icon:  '💰'
+      },
+      'censeur': {
+        title: isFr ? 'Censeur' : 'Censor',
+        desc:  isFr ? 'Contrôle, vérifications, élections, discipline'
+                    : 'Control, verifications, elections, discipline',
+        icon:  '⚖️'
+      }
+    };
+    if(map[role]) return map[role];
+    // bureauRole inconnu — fallback générique
+    return {
+      title: u.bureauRole,
+      desc:  isFr ? 'Membre du Bureau avec accès administrateur'
+                  : 'Bureau member with administrator access',
+      icon:  '👤'
+    };
+  }
+  // Cas 3 : admin sans bureauRole
+  if(u && u.role === 'admin'){
+    return {
+      title: isFr ? 'Administrateur' : 'Administrator',
+      desc:  isFr ? 'Membre du Bureau avec accès administrateur'
+                  : 'Bureau member with administrator access',
+      icon:  '👤'
+    };
+  }
+  // Cas 4 : fallback
+  return {
+    title: username,
+    desc:  isFr ? 'Utilisateur de l\'application' : 'Application user',
+    icon:  '👤'
+  };
+}
+
 // 📨 V6.27 : Retourne l'avatar (photo ou initiales) pour un username.
 // Renvoie { type: 'img'|'initials', value: dataURL|2-letters }
 function getUserAvatar(username){
@@ -4597,6 +4719,32 @@ MODULES.messages = function(){
     // 📨 V6.29 : optgroup + diffusion pour les comptes membre_indiv
     allIndivMembers: 'Membres individuels',
     sendToAllIndivMembers: '📢 Tous les membres individuels',
+    // 📨 V6.30 : descriptions des rôles + UI cartes pour la sélection de destinataire
+    pickRecipientTitle: 'Choisissez un destinataire',
+    pickRecipientHint: 'Cliquez sur la carte de la personne à contacter. Une description de chaque contact est affichée pour vous aider à choisir.',
+    roleAdminTech: 'Administrateur technique',
+    roleAdminTechDesc: 'Assistance technique, mots de passe, bugs de l\'application',
+    rolePresident: 'Président du Bureau',
+    rolePresidentDesc: 'Questions générales, orientations stratégiques, réunions',
+    roleSecretaire: 'Secrétaire Général',
+    roleSecretaireDesc: 'Convocations, procès-verbaux, correspondances',
+    roleTresorier: 'Trésorier',
+    roleTresorierDesc: 'Cotisations, épargne, tontines, emprunts, secours',
+    roleCenseur: 'Censeur',
+    roleCenseurDesc: 'Contrôle, vérifications, élections, discipline',
+    roleMembreCommun: 'Compte membre commun',
+    roleMembreCommunDesc: 'Diffusion à tous les membres ordinaires de l\'Amicale',
+    roleMembreIndiv: 'Membre individuel',
+    roleMembreIndivDesc: 'Membre de l\'Amicale avec un compte personnel',
+    roleCustomAdmin: 'Administrateur',
+    roleCustomAdminDesc: 'Membre du Bureau avec accès administrateur',
+    selectedRecipient: 'Destinataire sélectionné :',
+    selectFirst: 'Veuillez sélectionner un destinataire ci-dessus',
+    noRecipientAvail: 'Aucun destinataire disponible',
+    noRecipientAvailHint: 'Contactez l\'administrateur technique pour créer des comptes.',
+    broadcastAllAdminsDesc: 'Envoie un message individuel à chaque administrateur',
+    broadcastAllMembersDesc: 'Envoie un message au compte membre partagé (vu par tous les membres ordinaires)',
+    broadcastAllIndivDesc: 'Envoie un message individuel à chaque membre individuel',
     // 📎 V6.23 : pièces jointes
     attachments: 'Pièces jointes',
     addAttachment: '📎 Joindre',
@@ -4647,6 +4795,32 @@ MODULES.messages = function(){
     // 📨 V6.29 : optgroup + broadcast for membre_indiv accounts
     allIndivMembers: 'Individual members',
     sendToAllIndivMembers: '📢 All individual members',
+    // 📨 V6.30 : role descriptions + card-based recipient selector UI
+    pickRecipientTitle: 'Choose a recipient',
+    pickRecipientHint: 'Click the card of the person to contact. A description is shown for each contact to help you choose.',
+    roleAdminTech: 'Technical administrator',
+    roleAdminTechDesc: 'Technical assistance, passwords, application bugs',
+    rolePresident: 'Bureau President',
+    rolePresidentDesc: 'General questions, strategic directions, meetings',
+    roleSecretaire: 'General Secretary',
+    roleSecretaireDesc: 'Convocations, minutes, correspondence',
+    roleTresorier: 'Treasurer',
+    roleTresorierDesc: 'Dues, savings, tontines, loans, relief funds',
+    roleCenseur: 'Censor',
+    roleCenseurDesc: 'Control, verifications, elections, discipline',
+    roleMembreCommun: 'Shared member account',
+    roleMembreCommunDesc: 'Broadcast to all ordinary members of the Association',
+    roleMembreIndiv: 'Individual member',
+    roleMembreIndivDesc: 'Association member with a personal account',
+    roleCustomAdmin: 'Administrator',
+    roleCustomAdminDesc: 'Bureau member with administrator access',
+    selectedRecipient: 'Selected recipient:',
+    selectFirst: 'Please select a recipient above',
+    noRecipientAvail: 'No recipient available',
+    noRecipientAvailHint: 'Contact the technical administrator to create accounts.',
+    broadcastAllAdminsDesc: 'Sends an individual message to each administrator',
+    broadcastAllMembersDesc: 'Sends a message to the shared member account (seen by all ordinary members)',
+    broadcastAllIndivDesc: 'Sends an individual message to each individual member',
     // 📎 V6.23 : attachments
     attachments: 'Attachments',
     addAttachment: '📎 Attach',
@@ -5015,7 +5189,7 @@ function deleteConversation(otherUser){
   toast(isFr ? 'Supprimé' : 'Deleted', isFr ? 'Conversation supprimée.' : 'Conversation deleted.', 'success');
 }
 
-// Rendu : nouvelle conversation
+// Rendu : nouvelle conversation — 📨 V6.30 : cartes cliquables au lieu d'un <select>
 function renderNewConversation(L){
   // Liste des destinataires possibles : tous les utilisateurs sauf moi
   const me = state.currentUser.username;
@@ -5032,42 +5206,97 @@ function renderNewConversation(L){
   if(allUsers.length === 0){
     html += `
       <div style="text-align:center;padding:20px;color:#dc2626">
-        <p>${L.noRecipient}</p>
+        <div style="font-size:48px;margin-bottom:10px">📭</div>
+        <p style="font-weight:600;margin:0 0 4px">${L.noRecipientAvail}</p>
+        <p style="font-size:13px;margin:0">${L.noRecipientAvailHint}</p>
       </div>
     `;
     html += `</div>`;
     return html;
   }
 
-  // Option diffusion
-  // 📨 V6.29 : on inclut aussi les comptes membre_indiv dans le sélecteur de destinataires
-  // afin que les membres individuels puissent s'écrire entre eux et que l'admin puisse
-  // initier une conversation avec n'importe quel membre individuel.
+  // 📨 V6.30 : prépare les groupes de destinataires
   const admins  = allUsers.filter(u => u.role === 'admin');
   const members = allUsers.filter(u => u.role === 'membre');
   const indivs  = allUsers.filter(u => u.role === 'membre_indiv');
 
+  // Bandeau d'aide explicatif
   html += `
-      <div class="form-group" style="margin-bottom:12px">
-        <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px">${L.recipient}</label>
-        <select id="msgRecipient" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px">
-          <option value="">${L.selectRecipient}</option>
-          ${admins.length > 0 ? `<optgroup label="${L.allAdmins}">` : ''}
-          ${admins.map(u => `<option value="${u.username}">${getUserDisplayLabel(u.username)}</option>`).join('')}
-          ${admins.length > 0 ? `</optgroup>` : ''}
-          ${members.length > 0 ? `<optgroup label="${L.allMembers}">` : ''}
-          ${members.map(u => `<option value="${u.username}">${getUserDisplayLabel(u.username)}</option>`).join('')}
-          ${members.length > 0 ? `</optgroup>` : ''}
-          ${indivs.length > 0 ? `<optgroup label="${L.allIndivMembers}">` : ''}
-          ${indivs.map(u => `<option value="${u.username}">${getUserDisplayLabel(u.username)}</option>`).join('')}
-          ${indivs.length > 0 ? `</optgroup>` : ''}
-          <optgroup label="${L.broadcast}">
-            <option value="__ALL_ADMIN__">${L.sendToAll}</option>
-            <option value="__ALL_MEMBERS__">${L.sendToAllMembers}</option>
-            ${indivs.length > 0 ? `<option value="__ALL_INDIV__">${L.sendToAllIndivMembers}</option>` : ''}
-          </optgroup>
-        </select>
+    <div style="background:#eff6ff;border-left:4px solid #3b82f6;padding:10px 14px;border-radius:6px;margin-bottom:14px">
+      <div style="font-weight:600;color:#1e40af;font-size:13px;margin-bottom:2px">ℹ️ ${L.pickRecipientTitle}</div>
+      <div style="font-size:12px;color:#1e40af">${L.pickRecipientHint}</div>
+    </div>
+  `;
+
+  // Résumé du destinataire sélectionné (mis à jour par selectRecipientCard())
+  html += `
+    <div id="recipientSummary" style="background:#f0fdf4;border:2px dashed #10b981;border-radius:8px;padding:12px;margin-bottom:14px;display:none">
+      <div style="font-size:11px;color:#0f5b45;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">${L.selectedRecipient}</div>
+      <div id="recipientSummaryContent" style="margin-top:6px"></div>
+    </div>
+  `;
+
+  // Champ caché pour stocker le destinataire sélectionné (lu par sendNewMessage)
+  html += `<input type="hidden" id="msgRecipient" value="">`;
+
+  // Génère une carte cliquable pour un username donné
+  const renderCard = (username, isBroadcast, broadcastLabel, broadcastDesc) => {
+    const info = isBroadcast
+      ? { title: broadcastLabel, desc: broadcastDesc, icon: '📢' }
+      : getRoleInfo(username);
+    const avatarHTML = isBroadcast
+      ? `<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#dc2626,#f59e0b);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📢</div>`
+      : renderUserAvatarHTML(username, 42);
+    return `
+      <div onclick="selectRecipientCard('${username}', this)" class="recipient-card" data-username="${username}" style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:white;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;transition:all .2s;flex:1;min-width:280px;max-width:400px" onmouseover="if(!this.classList.contains('selected')){this.style.borderColor='#0f5b45';this.style.background='#f0fdf4'}" onmouseout="if(!this.classList.contains('selected')){this.style.borderColor='#e2e8f0';this.style.background='white'}">
+        ${avatarHTML}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;color:#0f5b45;font-size:14px;margin-bottom:2px">${escapeHtml(info.title)}</div>
+          <div style="font-size:11px;color:#64748b;line-height:1.4">${escapeHtml(info.desc)}</div>
+        </div>
+        <div class="check-mark" style="display:none;color:#10b981;font-size:20px;flex-shrink:0">✓</div>
       </div>
+    `;
+  };
+
+  // Génère une section avec un titre + une grille de cartes
+  const renderSection = (title, cardsHTML) => {
+    if(!cardsHTML.trim()) return '';
+    return `
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;color:#0f5b45;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #d1fae5">${title}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">${cardsHTML}</div>
+      </div>
+    `;
+  };
+
+  // Section : Administrateurs (1 carte par compte admin)
+  const adminsCards = admins.map(u => renderCard(u.username, false)).join('');
+  html += renderSection(L.allAdmins, adminsCards);
+
+  // Section : Membres individuels (1 carte par compte membre_indiv)
+  const indivsCards = indivs.map(u => renderCard(u.username, false)).join('');
+  html += renderSection(L.allIndivMembers, indivsCards);
+
+  // Section : Compte membre commun (1 seule carte)
+  const membersCards = members.map(u => renderCard(u.username, false)).join('');
+  html += renderSection(L.allMembers, membersCards);
+
+  // Section : Diffusions
+  let broadcastCards = '';
+  if(admins.length > 0){
+    broadcastCards += renderCard('__ALL_ADMIN__', true, L.sendToAll, L.broadcastAllAdminsDesc);
+  }
+  if(members.length > 0){
+    broadcastCards += renderCard('__ALL_MEMBERS__', true, L.sendToAllMembers, L.broadcastAllMembersDesc);
+  }
+  if(indivs.length > 0){
+    broadcastCards += renderCard('__ALL_INDIV__', true, L.sendToAllIndivMembers, L.broadcastAllIndivDesc);
+  }
+  html += renderSection(L.broadcast, broadcastCards);
+
+  // Sujet + corps + pièces jointes (inchangés)
+  html += `
       <div class="form-group" style="margin-bottom:12px">
         <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px">${L.subject}</label>
         <input type="text" id="msgSubject" placeholder="${L.subject}" style="width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px">
@@ -5092,6 +5321,66 @@ function renderNewConversation(L){
     </div>
   `;
   return html;
+}
+
+// 📨 V6.30 : gestionnaire de clic sur une carte destinataire.
+// Met à jour le champ caché #msgRecipient, surligne la carte sélectionnée
+// et affiche un résumé visuel en haut du formulaire.
+function selectRecipientCard(username, cardEl){
+  // Met à jour le champ caché
+  const input = document.getElementById('msgRecipient');
+  if(input) input.value = username;
+  // Retire la surbrillance de toutes les cartes
+  document.querySelectorAll('.recipient-card').forEach(c => {
+    c.classList.remove('selected');
+    c.style.borderColor = '#e2e8f0';
+    c.style.background = 'white';
+    const cm = c.querySelector('.check-mark');
+    if(cm) cm.style.display = 'none';
+  });
+  // Surligne la carte cliquée
+  if(cardEl){
+    cardEl.classList.add('selected');
+    cardEl.style.borderColor = '#10b981';
+    cardEl.style.background = '#f0fdf4';
+    const cm = cardEl.querySelector('.check-mark');
+    if(cm) cm.style.display = 'block';
+  }
+  // Met à jour le résumé
+  const summary = document.getElementById('recipientSummary');
+  const summaryContent = document.getElementById('recipientSummaryContent');
+  if(summary && summaryContent){
+    let info;
+    if(username === '__ALL_ADMIN__'){
+      const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') || (typeof CURRENT_LANG === 'undefined');
+      info = { title: isFr ? '📢 Tous les administrateurs' : '📢 All administrators',
+               desc: isFr ? 'Diffusion à tous les administrateurs du Bureau' : 'Broadcast to all Bureau administrators' };
+    } else if(username === '__ALL_MEMBERS__'){
+      const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') || (typeof CURRENT_LANG === 'undefined');
+      info = { title: isFr ? '📢 Tous les membres (compte commun)' : '📢 All members (shared account)',
+               desc: isFr ? 'Diffusion au compte membre partagé' : 'Broadcast to shared member account' };
+    } else if(username === '__ALL_INDIV__'){
+      const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') || (typeof CURRENT_LANG === 'undefined');
+      info = { title: isFr ? '📢 Tous les membres individuels' : '📢 All individual members',
+               desc: isFr ? 'Diffusion à chaque membre individuel' : 'Broadcast to each individual member' };
+    } else {
+      info = getRoleInfo(username);
+    }
+    const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') || (typeof CURRENT_LANG === 'undefined');
+    const avatarHTML = (username === '__ALL_ADMIN__' || username === '__ALL_MEMBERS__' || username === '__ALL_INDIV__')
+      ? `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#dc2626,#f59e0b);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📢</div>`
+      : renderUserAvatarHTML(username, 36);
+    summaryContent.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px">
+        ${avatarHTML}
+        <div>
+          <div style="font-weight:700;color:#0f5b45;font-size:14px">${escapeHtml(info.title)}</div>
+          <div style="font-size:11px;color:#64748b">${escapeHtml(info.desc)}</div>
+        </div>
+      </div>
+    `;
+    summary.style.display = 'block';
+  }
 }
 
 // Envoie un nouveau message (ou diffusion)
@@ -12914,6 +13203,40 @@ function saveCreateUser(){
  *     avec un message individuel (le membre ne voit pas les autres destinataires).
  *   - La vie privée est préservée : getConversations() ne montre que les conversations
  *     où l'utilisateur courant est expéditeur ou destinataires directs.
+ * ----------------------------------------------------------------------------- */
+/* ---------- V6.30 : SÉLECTION DE DESTINATAIRE CLAIRE ET VISUELLE ----------
+ * PROBLÈME RÉSOLU :
+ *   En V6.29, le sélecteur de destinataire était un <select> austère avec des
+ *   labels techniques ("👤 Président (president)") qui ne permettaient pas à un
+ *   membre de savoir à qui s'adresser. Le menu déroulant ne montrait ni le rôle
+ *   réel, ni la fonction de chaque contact.
+ *
+ * SOLUTION V6.30 :
+ *   1. Nouvelle fonction getRoleInfo(username) qui renvoie {title, desc, icon} :
+ *      - "🔧 Administrateur technique" → "Assistance technique, mots de passe, bugs"
+ *      - "👔 Président du Bureau" → "Questions générales, orientations stratégiques"
+ *      - "📝 Secrétaire Général" → "Convocations, procès-verbaux, correspondances"
+ *      - "💰 Trésorier" → "Cotisations, épargne, tontines, emprunts, secours"
+ *      - "⚖️ Censeur" → "Contrôle, vérifications, élections, discipline"
+ *      - "👤 Membre individuel" → "Membre de l'Amicale avec un compte personnel"
+ *      (bilingue FR/EN)
+ *   2. renderNewConversation() entièrement réécrit :
+ *      - Remplace le <select> par une grille de CARTES CLIQUABLES
+ *      - Chaque carte affiche : avatar (photo ou initiales) + titre + description
+ *      - Sections distinctes : Administrateurs / Membres individuels / Compte membre / Diffusions
+ *      - Bandeau d'aide "ℹ️ Choisissez un destinataire" en haut
+ *      - Résumé visuel du destinataire sélectionné (encadré vert pointillé)
+ *      - Champ #msgRecipient caché pour compatibilité avec sendNewMessage()
+ *   3. Nouvelle fonction selectRecipientCard(username, cardEl) :
+ *      - Met à jour #msgRecipient
+ *      - Surligne la carte sélectionnée (bord vert + fond vert pâle + ✓)
+ *      - Met à jour le résumé en haut
+ *   4. 25 chaînes i18n ajoutées (FR + EN) : pickRecipientTitle, pickRecipientHint,
+ *      roleAdminTech[Desc], rolePresident[Desc], roleSecretaire[Desc],
+ *      roleTresorier[Desc], roleCenseur[Desc], roleMembreCommun[Desc],
+ *      roleMembreIndiv[Desc], roleCustomAdmin[Desc], selectedRecipient,
+ *      selectFirst, noRecipientAvail[Hint], broadcastAllAdminsDesc,
+ *      broadcastAllMembersDesc, broadcastAllIndivDesc.
  * ----------------------------------------------------------------------------- */
 // État du formulaire de création de compte membre individuel.
 let createIndivForm = {
