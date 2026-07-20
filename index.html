@@ -4594,6 +4594,9 @@ MODULES.messages = function(){
     broadcastHint: 'Envoi à plusieurs destinataires',
     allAdmins: 'Tous les administrateurs',
     allMembers: 'Tous les membres (compte membre)',
+    // 📨 V6.29 : optgroup + diffusion pour les comptes membre_indiv
+    allIndivMembers: 'Membres individuels',
+    sendToAllIndivMembers: '📢 Tous les membres individuels',
     // 📎 V6.23 : pièces jointes
     attachments: 'Pièces jointes',
     addAttachment: '📎 Joindre',
@@ -4641,6 +4644,9 @@ MODULES.messages = function(){
     broadcastHint: 'Send to multiple recipients',
     allAdmins: 'All administrators',
     allMembers: 'All members (member account)',
+    // 📨 V6.29 : optgroup + broadcast for membre_indiv accounts
+    allIndivMembers: 'Individual members',
+    sendToAllIndivMembers: '📢 All individual members',
     // 📎 V6.23 : attachments
     attachments: 'Attachments',
     addAttachment: '📎 Attach',
@@ -5034,8 +5040,12 @@ function renderNewConversation(L){
   }
 
   // Option diffusion
-  const admins = allUsers.filter(u => u.role === 'admin');
+  // 📨 V6.29 : on inclut aussi les comptes membre_indiv dans le sélecteur de destinataires
+  // afin que les membres individuels puissent s'écrire entre eux et que l'admin puisse
+  // initier une conversation avec n'importe quel membre individuel.
+  const admins  = allUsers.filter(u => u.role === 'admin');
   const members = allUsers.filter(u => u.role === 'membre');
+  const indivs  = allUsers.filter(u => u.role === 'membre_indiv');
 
   html += `
       <div class="form-group" style="margin-bottom:12px">
@@ -5048,9 +5058,13 @@ function renderNewConversation(L){
           ${members.length > 0 ? `<optgroup label="${L.allMembers}">` : ''}
           ${members.map(u => `<option value="${u.username}">${getUserDisplayLabel(u.username)}</option>`).join('')}
           ${members.length > 0 ? `</optgroup>` : ''}
+          ${indivs.length > 0 ? `<optgroup label="${L.allIndivMembers}">` : ''}
+          ${indivs.map(u => `<option value="${u.username}">${getUserDisplayLabel(u.username)}</option>`).join('')}
+          ${indivs.length > 0 ? `</optgroup>` : ''}
           <optgroup label="${L.broadcast}">
             <option value="__ALL_ADMIN__">${L.sendToAll}</option>
             <option value="__ALL_MEMBERS__">${L.sendToAllMembers}</option>
+            ${indivs.length > 0 ? `<option value="__ALL_INDIV__">${L.sendToAllIndivMembers}</option>` : ''}
           </optgroup>
         </select>
       </div>
@@ -5111,6 +5125,11 @@ function sendNewMessage(){
     recipients = (state.users || []).filter(u => u.role === 'admin' && u.username !== state.currentUser.username).map(u => u.username);
   } else if(recipient === '__ALL_MEMBERS__'){
     recipients = (state.users || []).filter(u => u.role === 'membre').map(u => u.username);
+  } else if(recipient === '__ALL_INDIV__'){
+    // 📨 V6.29 : diffusion à tous les comptes membre_indiv sauf moi-même
+    recipients = (state.users || [])
+      .filter(u => u.role === 'membre_indiv' && u.username !== state.currentUser.username)
+      .map(u => u.username);
   } else {
     recipients = [recipient];
   }
@@ -10618,64 +10637,17 @@ async function pushToCloud(force){
     _syncInProgress = false;
   }
 }
-// 📨 V6.29 : Fusionne les comptes membre_indiv du cloud dans state.users local.
-// - Préserve TOUS les comptes admin/membre partagés (locaux).
-// - Remplace les membre_indiv locaux par ceux du cloud (source de vérité).
-// - Si l'utilisateur courant est un membre_indiv, met à jour state.currentUser avec la version cloud.
-// - Si un compte indiv local n'existe plus dans le cloud (supprimé par l'admin depuis un autre
-//   navigateur), il est retiré localement.
-// Retourne le nombre de comptes indiv après fusion (pour affichage éventuel).
-function mergeIndivUsersFromCloud(cloudUsersIndiv){
-  if(!Array.isArray(cloudUsersIndiv)) cloudUsersIndiv = [];
-  if(!Array.isArray(state.users)) state.users = [];
-  // 1) Sépare les comptes locaux : admin + membre partagé (à garder tels quels)
-  const localNonIndiv = state.users.filter(u => u.role !== 'membre_indiv');
-  // 2) Construit la nouvelle liste : locaux non-indiv + membre_indiv du cloud
-  const beforeCount = state.users.filter(u => u.role === 'membre_indiv').length;
-  state.users = localNonIndiv.concat(cloudUsersIndiv.map(u => ({ ...u })));
-  const afterCount = state.users.filter(u => u.role === 'membre_indiv').length;
-  // 3) Si l'utilisateur courant est un membre_indiv, on met à jour sa session
-  if(state.currentUser && state.currentUser.role === 'membre_indiv'){
-    const updated = state.users.find(u => u.id === state.currentUser.id || u.username === state.currentUser.username);
-    if(updated){
-      // Conserve mustChangePassword local si l'utilisateur est en train de changer son MDP
-      // (sinon on prend la version cloud qui peut être plus récente).
-      const localMustChange = state.currentUser.mustChangePassword;
-      state.currentUser = { ...updated, mustChangePassword: localMustChange };
-    } else {
-      // L'utilisateur courant a été supprimé du cloud → déconnexion forcée
-      console.warn('V6.29: compte courant supprimé du cloud — déconnexion forcée');
-      if(typeof logout === 'function'){
-        setTimeout(() => logout(), 100);
-      } else {
-        state.currentUser = null;
-      }
-    }
-  }
-  console.log('V6.29: fusion usersIndiv — avant=' + beforeCount + ', après=' + afterCount);
-  return afterCount;
-}
-
 // Construit le payload à pousser dans le cloud.
-// Exclut: sync (méta de synchro), currentUser (session locale), activeModule, users (mots de passe admin/membre partagé).
+// Exclut : sync (méta de synchro), currentUser (session locale), activeModule, users (mots de passe).
 // Ces champs sont locaux à chaque instance et ne doivent pas être synchronisés.
-//
-// 📨 V6.29 : EXCEPTION — les comptes membre_indiv (créés par l'admin via V6.28) DOIVENT
-// être synchronisés pour que les membres puissent se connecter depuis n'importe quel
-// navigateur. On les extrait dans un champ séparé `usersIndiv` (avec leur mot de passe),
-// SANS toucher aux comptes admin/membre qui restent strictement locaux.
 function buildCloudPayload(){
   const clone = JSON.parse(JSON.stringify(state));
   delete clone.sync;
   delete clone.currentUser;
   delete clone.activeModule;
   // Les users ne sont pas synchronisés pour éviter d'écraser les mots de passe locaux
-  // (chaque instance gère ses propres comptes admin/membre).
+  // (chaque instance gère ses propres comptes).
   delete clone.users;
-  // 📨 V6.29 : EXCEPTION — on synchronise les comptes membre_indiv via un champ dédié.
-  // Ils seront fusionnés dans state.users localement lors du pull, sans toucher aux
-  // comptes admin/membre partagés qui restent locaux.
-  clone.usersIndiv = (Array.isArray(state.users) ? state.users.filter(u => u.role === 'membre_indiv') : []);
   // Le journal d'audit est local à chaque instance (Task 46) — ne pas synchroniser.
   delete clone.auditLog;
   delete clone.activeSessions;
@@ -10754,11 +10726,6 @@ async function pullFromCloud(force){
       activeSessions: state.activeSessions, // Sessions actives locales (Task 46)
     };
     state = Object.assign({}, cloud.data, preserved);
-    // 📨 V6.29 : fusionne les comptes membre_indiv du cloud dans state.users local
-    // (préserve les comptes admin/membre partagés qui restent locaux).
-    if(Array.isArray(cloud.data.usersIndiv)){
-      mergeIndivUsersFromCloud(cloud.data.usersIndiv);
-    }
     // Met à jour les méta sync
     state.sync.lastSyncAt = Date.now();
     state.sync.lastPushedBy = cloud.updated_by || null;
@@ -10942,10 +10909,6 @@ async function silentPullFromCloud(){
         // 📨 V6.22 : les messages fusionnés sont déjà dans cloud.data.messages
       };
       state = Object.assign({}, cloud.data, preserved);
-      // 📨 V6.29 : fusionne les comptes membre_indiv du cloud dans state.users local
-      if(Array.isArray(cloud.data.usersIndiv)){
-        mergeIndivUsersFromCloud(cloud.data.usersIndiv);
-      }
       // Met à jour les méta sync
       state.sync.lastSyncAt = Date.now();
       state.sync.lastPushedBy = cloud.updated_by || null;
@@ -12935,6 +12898,23 @@ function saveCreateUser(){
 
 
 /* ---------- V6.28 : COMPTES MEMBRES INDIVIDUELS ---------- */
+/* ---------- V6.29 : MESSAGERIE — support complet des comptes membre_indiv ----------
+ * Améliorations apportées par rapport à V6.28 :
+ *   1. renderNewConversation() : ajout d'un optgroup "Membres individuels" listant
+ *      tous les comptes role === 'membre_indiv' (avec affichage du vrai nom du membre
+ *      lié via getUserDisplayLabel).
+ *   2. sendNewMessage() : nouveau cas de diffusion '__ALL_INDIV__' qui envoie un
+ *      message séparé à chaque compte membre_indiv (sauf moi-même).
+ *   3. Nouvelles chaînes i18n (FR + EN) : allIndivMembers, sendToAllIndivMembers.
+ *
+ * Conséquences pratiques :
+ *   - L'admin peut désormais INITIER une conversation avec n'importe quel membre_indiv.
+ *   - Deux membre_indiv peuvent s'écrire entre eux (1-à-1).
+ *   - Une diffusion "📢 Tous les membres individuels" atteint chaque membre_indiv
+ *     avec un message individuel (le membre ne voit pas les autres destinataires).
+ *   - La vie privée est préservée : getConversations() ne montre que les conversations
+ *     où l'utilisateur courant est expéditeur ou destinataires directs.
+ * ----------------------------------------------------------------------------- */
 // État du formulaire de création de compte membre individuel.
 let createIndivForm = {
   membreId: '',
