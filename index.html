@@ -226,6 +226,15 @@
   .memoriam-item.today .memoriam-days{background:white;color:#111827;border-color:white}
   .memoriam-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;color:#1f2937;background:#e5e7eb;border:1px solid #9ca3af;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;text-transform:uppercase}
 
+  /* 📨 V6.27 — Typing indicator animation */
+  @keyframes msgTypingBlink {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
+  /* 📨 V6.27 — Avatar utilisateur dans la messagerie */
+  .msg-avatar-img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; flex-shrink: 0; }
+  .msg-avatar-initials { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#0f5b45,#10b981); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; flex-shrink: 0; }
+
   /* V6.26 — Bouton + modal "Voir tous les membres disparus" */
   .deceased-modal-body{max-height:70vh;overflow-y:auto;padding-right:6px}
   .deceased-modal-list{display:flex;flex-direction:column;gap:10px}
@@ -249,27 +258,6 @@
   .btn-deceased-list:hover{background:linear-gradient(135deg,#111827,#1f2937);border-color:#6b7280;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
   .btn-deceased-list .icon{font-size:16px}
   .btn-deceased-list .count{background:#e5e7eb;color:#111827;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:4px}
-
-  /* V6.27 — Messagerie instantanée : pulse, typing, présence */
-  @keyframes msg-live-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-  .msg-live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:4px;animation:msg-live-pulse 1.6s ease-in-out infinite;vertical-align:middle}
-  .msg-live-dot.offline{background:#94a3b8;animation:none;opacity:.6}
-  .msg-live-dot.syncing{background:#f59e0b;animation:msg-live-pulse .8s ease-in-out infinite}
-  .msg-typing-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-style:italic;padding:4px 10px;background:#f1f5f9;border-radius:8px;margin-top:4px;width:fit-content}
-  .msg-typing-dots{display:inline-flex;gap:2px}
-  .msg-typing-dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:#64748b;animation:msg-typing-bounce 1.2s ease-in-out infinite}
-  .msg-typing-dots span:nth-child(2){animation-delay:.15s}
-  .msg-typing-dots span:nth-child(3){animation-delay:.3s}
-  @keyframes msg-typing-bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
-  .msg-presence{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#15803d}
-  .msg-presence.offline{background:#f1f5f9;color:#64748b}
-  .msg-presence.recent{background:#fef3c7;color:#a16207}
-  .msg-sync-countdown{display:inline-block;font-size:10px;color:#94a3b8;font-variant-numeric:tabular-nums;margin-left:6px;min-width:80px}
-  .msg-bubble-sending{opacity:.6;position:relative}
-  .msg-bubble-sending::after{content:'⟳';position:absolute;top:4px;right:6px;font-size:10px;color:#64748b;animation:msg-live-pulse 1s ease-in-out infinite}
-  .msg-bubble-new{animation:msg-bubble-appear .3s ease-out}
-  @keyframes msg-bubble-appear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  .msg-conv-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 
 
   /* Stats grid */
@@ -626,7 +614,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.27</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.28</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -690,7 +678,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.27',
+    'sidebar.version': 'APD-MINAT • Version 6.28',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -1047,7 +1035,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.27',
+    'sidebar.version': 'APD-MINAT • Version 6.28',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -2177,6 +2165,12 @@ const NAV_ITEMS = [
 /* ---------- DEFAULT USERS (Task 44) ---------- */
 // Comptes par défaut. Utilisés pour l'initialisation et la migration des données existantes.
 // Chaque admin a SON PROPRE mot de passe. Les membres ordinaires utilisent un COMPTE COMMUN partagé.
+// 📨 V6.27 : Types de comptes :
+//  - role 'admin'           : 5 comptes Bureau Exécutif (admin, president, secretaire, tresorier, censeur)
+//  - role 'membre'          : compte commun partagé (legacy, lecture seule)
+//  - role 'membre_indiv'    : compte individuel créé par l'admin, lié à une fiche membre
+//                             username = telephone (ou email) du membre ; password = personnel
+//                             membreId = id de la fiche membre liée (pour photo + nom dans la messagerie)
 const DEFAULT_USERS = [
   { id:'u1',      username:'admin',      password:'admin',      role:'admin',  bureauRole:null,                 membreId:null, mustChangePassword:false, createdAt:new Date().toISOString() },
   { id:'u_pres',  username:'president',  password:'president',  role:'admin',  bureauRole:'Président',           membreId:null, mustChangePassword:true,  createdAt:new Date().toISOString() },
@@ -3933,7 +3927,21 @@ function doLogin(){
     return;
   }
   // 🛡️ Recherche l'utilisateur dans state.users EN PREMIER.
+  // 📨 V6.27 : pour les comptes membre_indiv, on accepte username OU telephone OU adresseEmail
+  // comme identifiant de connexion.
   let user = state.users.find(x => x.username === u && x.password === p);
+  if(!user){
+    // V6.27 : tentative par téléphone ou email (membre_indiv uniquement)
+    user = state.users.find(x =>
+      x.role === 'membre_indiv' &&
+      x.password === p &&
+      ( (x.telephone && x.telephone === u) || (x.adresseEmail && x.adresseEmail.toLowerCase() === u.toLowerCase()) )
+    );
+    if(user){
+      // L'identifiant saisi était téléphone/email — on bascule sur le username réel pour la suite
+      // (state.currentUser.username = user.username)
+    }
+  }
   // 🛡️ V6.17 : Fallback DEFAULT_USERS UNIQUEMENT si l'utilisateur n'existe pas encore dans
   // state.users (ex: 1ère connexion après migration). Si l'utilisateur existe mais avec un MDP
   // différent, on NE fait PAS de fallback — sinon l'ancien MDP par défaut continuerait à fonctionner
@@ -3992,33 +4000,17 @@ function doLogin(){
   if(user.username === 'admin'){
     showPendingAdminLoginNotifications();
   }
-  // 📨 V6.22 / V6.27 : démarre la messagerie instantanée (polling + cross-tab sync + typing + présence)
+  // 📨 V6.22 : démarre la messagerie instantanée (polling + cross-tab sync)
   try {
     if(typeof setupCrossTabSync === 'function') setupCrossTabSync();
     if(typeof startMessagePolling === 'function') startMessagePolling();
-    // V6.27 : démarre le heartbeat de présence (annonce toutes les 20s)
-    if(typeof startPresenceHeartbeat === 'function') startPresenceHeartbeat();
-    // V6.27 : démarre le check périodique de présence (10s)
-    if(typeof startPresenceCheck === 'function') startPresenceCheck();
-    // V6.27 : au focus de la fenêtre → pull immédiat (bypass throttle)
-    window.addEventListener('focus', () => {
-      if(typeof _msgLastPollAt !== 'undefined') _msgLastPollAt = 0;
-      if(typeof pullMessagesFromCloud === 'function') pullMessagesFromCloud().catch(()=>{});
-    });
-    // V6.27 : au retour de visibilité → pull immédiat
-    document.addEventListener('visibilitychange', () => {
-      if(document.visibilityState === 'visible'){
-        if(typeof _msgLastPollAt !== 'undefined') _msgLastPollAt = 0;
-        if(typeof pullMessagesFromCloud === 'function') pullMessagesFromCloud().catch(()=>{});
-      }
-    });
     // Pull initial des messages après 2s (pour récupérer les messages récents du cloud)
     setTimeout(() => {
       if(typeof pullMessagesFromCloud === 'function'){
         pullMessagesFromCloud().catch(()=>{});
       }
     }, 2000);
-  } catch(e){ console.warn('V6.22/V6.27: messaging init skipped:', e); }
+  } catch(e){ console.warn('V6.22: messaging init skipped:', e); }
   // 🌐 V6.3 : si l'utilisateur est un membre (lecture seule), on charge les données publiées (data.json)
   // depuis le serveur (Vercel). Les admins utilisent leurs données locales (IndexedDB).
   // 🌐 V6.16 : en PRIORITÉ, on tente un PULL Supabase (temps réel) avant data.json (statique).
@@ -4150,6 +4142,14 @@ function getCurrentUserRoleLabel(){
     return state.currentUser.bureauRole || 'Administrateur';
   }
   if(state.currentUser.role === 'membre') return 'Membre';
+  // 📨 V6.28 : compte membre_indiv — affiche le vrai nom du membre lié
+  if(state.currentUser.role === 'membre_indiv'){
+    if(state.currentUser.membreId){
+      const m = (typeof getMemberById === 'function') ? getMemberById(state.currentUser.membreId) : null;
+      if(m) return 'Membre — ' + getMemberFullName(m);
+    }
+    return 'Membre individuel';
+  }
   return state.currentUser.role;
 }
 // Admin technique = admin sans bureauRole (le compte 'admin' par défaut).
@@ -4443,14 +4443,58 @@ function getConversations(){
 }
 
 // Retourne le libellé affichable d'un utilisateur (username + rôle/nom).
+// 📨 V6.27 : pour les comptes individuels membre_indiv, affiche le vrai nom du membre lié.
 function getUserDisplayLabel(username){
   if(username === 'admin') return '🔧 Administrateur technique';
   if(username === 'membre') return '👥 Membre (compte commun)';
   // Cherche dans DEFAULT_USERS et state.users
   const u = (state.users || []).find(x => x.username === username);
+  // 📨 V6.27 : si compte membre_indiv avec membreId, résout le vrai membre
+  if(u && u.role === 'membre_indiv' && u.membreId){
+    const m = (typeof getMemberById === 'function') ? getMemberById(u.membreId) : null;
+    if(m){
+      const fullName = (typeof getMemberFullName === 'function') ? getMemberFullName(m) : (m.nom + ' ' + m.prenoms);
+      return '👤 ' + fullName.trim();
+    }
+  }
   if(u && u.bureauRole) return '👤 ' + u.bureauRole + ' (' + username + ')';
   if(u) return '👤 ' + username;
   return '👤 ' + username;
+}
+
+// 📨 V6.27 : Retourne l'avatar (photo ou initiales) pour un username.
+// Renvoie { type: 'img'|'initials', value: dataURL|2-letters }
+function getUserAvatar(username){
+  if(username === 'admin') return { type: 'initials', value: 'AT' };
+  if(username === 'membre') return { type: 'initials', value: 'MB' };
+  const u = (state.users || []).find(x => x.username === username);
+  if(u && u.role === 'membre_indiv' && u.membreId){
+    const m = (typeof getMemberById === 'function') ? getMemberById(u.membreId) : null;
+    if(m){
+      if(m.photo) return { type: 'img', value: m.photo };
+      const init = ((m.prenoms||'').charAt(0) + (m.nom||'').charAt(0)).toUpperCase();
+      return { type: 'initials', value: init || '?' };
+    }
+  }
+  if(u && u.bureauRole){
+    const init = (u.bureauRole||'').substring(0,2).toUpperCase();
+    return { type: 'initials', value: init };
+  }
+  if(u){
+    const init = (u.username||'').substring(0,2).toUpperCase();
+    return { type: 'initials', value: init };
+  }
+  return { type: 'initials', value: '??' };
+}
+
+// 📨 V6.27 : Génère le HTML pour un avatar utilisateur (35x35 cercle).
+function renderUserAvatarHTML(username, size){
+  const s = size || 36;
+  const av = getUserAvatar(username);
+  if(av.type === 'img'){
+    return `<img src="${av.value}" style="width:${s}px;height:${s}px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0" alt="">`;
+  }
+  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:linear-gradient(135deg,#0f5b45,#10b981);color:white;display:flex;align-items:center;justify-content:center;font-size:${Math.floor(s*0.4)}px;font-weight:bold;flex-shrink:0">${escapeHtml(av.value)}</div>`;
 }
 
 // Rendu principal du module Messagerie
@@ -4484,7 +4528,7 @@ MODULES.messages = function(){
     msgSent: 'Message envoyé',
     msgSentBody: 'Votre message a été envoyé à',
     infoTitle: 'ℹ️ À propos de la messagerie',
-    infoBody: 'La messagerie est <strong>instantanée</strong> (V6.27) : polling 2s, indicateur « en train d\'écrire », présence en temps réel, accusés de lecture. <strong>Pièces jointes</strong> (V6.23) : photos et documents (1 Mo max par fichier). Pour le compte <code>membre</code> (partagé), tous les membres voient les messages reçus — évitez d\'y partager des informations sensibles.',
+    infoBody: 'La messagerie est <strong>instantanée</strong> (V6.27) : synchronisation en temps réel, <strong>indicateur de frappe</strong>, <strong>accusés de lecture</strong>, photos de profil. <strong>Pièces jointes</strong> (V6.23) : photos et documents (1 Mo max par fichier). Pour le compte <code>membre</code> (partagé), tous les membres voient les messages reçus — évitez d\'y partager des informations sensibles.',
     noMessagesYet: 'Aucun message dans cette conversation',
     noMessagesHint: 'Écrivez le premier message ci-dessous.',
     backToList: '← Conversations',
@@ -4531,7 +4575,7 @@ MODULES.messages = function(){
     msgSent: 'Message sent',
     msgSentBody: 'Your message has been sent to',
     infoTitle: 'ℹ️ About messaging',
-    infoBody: 'Messaging is <strong>instant</strong> (V6.27): 2s polling, typing indicator, real-time presence, read receipts. <strong>Attachments</strong> (V6.23): photos and documents (1 MB max per file). For the <code>member</code> shared account, all members see received messages — avoid sharing sensitive information there.',
+    infoBody: 'Messaging is <strong>instant</strong> (V6.27): real-time sync, <strong>typing indicator</strong>, <strong>read receipts</strong>, profile photos. <strong>Attachments</strong> (V6.23): photos and documents (1 MB max per file). For the <code>member</code> shared account, all members see received messages — avoid sharing sensitive information there.',
     noMessagesYet: 'No messages in this conversation',
     noMessagesHint: 'Write the first message below.',
     backToList: '← Conversations',
@@ -4607,8 +4651,11 @@ function renderConversationList(L){
     const unreadBadge = c.unreadCount > 0
       ? `<span style="background:#dc2626;color:white;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:bold">${c.unreadCount} ${L.unread}</span>`
       : '';
+    // 📨 V6.27 : avatar du correspondant dans la liste des conversations
+    const convAvatarHTML = renderUserAvatarHTML(c.user, 40);
     html += `
       <div onclick="openConversation('${c.user}')" style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center;gap:10px" onmouseover="this.style.borderColor='#0f5b45';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
+        ${convAvatarHTML}
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;color:#0f5b45;margin-bottom:4px">${getUserDisplayLabel(c.user)}</div>
           <div style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><strong>${lastFrom}:</strong> ${attachIcon}${lastBody.replace(/</g,'&lt;')}</div>
@@ -4640,16 +4687,25 @@ function openConversation(username){
     });
     if(markedAny){
       saveState();
-      // 📨 V6.22 : pousse la mise à jour des readBy vers le cloud (Vu par le destinataire)
-      if(typeof pushMessagesToCloud === 'function'){
-        pushMessagesToCloud().catch(()=>{});
+      // 📨 V6.27 : pousse IMMÉDIATEMENT les readBy vers le cloud (accusé de lecture en direct)
+      // sans throttle pour une remontée instantanée.
+      if(typeof isCloudConfigured === 'function' && isCloudConfigured()){
+        // bypass throttle en réinitialisant le timestamp
+        if(typeof _msgPushLastAt !== 'undefined') _msgPushLastAt = 0;
+        if(typeof pushMessagesToCloud === 'function'){
+          pushMessagesToCloud().catch(()=>{});
+        }
       }
       if(typeof notifyOtherTabsMessageUpdate === 'function'){
         notifyOtherTabsMessageUpdate();
       }
     }
   }
+  // 📨 V6.27 : notifie le correspondant qu'on a ouvert la conversation (typing cleared + read receipt)
+  if(typeof sendReadReceipt === 'function') sendReadReceipt(username);
   navigateTo('messages');
+  // 📨 V6.27 : démarre le listener de typing pour cette conversation
+  if(typeof startTypingListener === 'function') startTypingListener(username);
 }
 
 // Rendu : vue d'une conversation
@@ -4678,32 +4734,31 @@ function renderConversation(otherUser, L){
         : `<span style="color:#dc2626;font-size:11px;font-weight:600">● ${isFr?'Hors-ligne':'Offline'}</span>`)
     : `<span style="color:#94a3b8;font-size:11px">○ ${isFr?'Local uniquement':'Local only'}</span>`;
 
-  // V6.27 : détermine le statut de présence initial
-  updatePresenceCache(otherUser, _presenceCache[otherUser] || 0);
-  const presenceStatus = getPresenceStatus(otherUser);
-  const presenceLabel = presenceStatus === 'online'
-    ? (isFr ? 'En ligne' : 'Online')
-    : presenceStatus === 'recent'
-      ? (isFr ? 'Vu récemment' : 'Seen recently')
-      : (isFr ? 'Hors-ligne' : 'Offline');
-  const presenceClass = presenceStatus === 'online' ? '' : (presenceStatus === 'recent' ? ' recent' : ' offline');
-
+  // 📨 V6.27 : avatar + nom du correspondant dans l'en-tête
+  const avatarHTML = renderUserAvatarHTML(otherUser, 44);
+  // 📨 V6.27 : indicateur "X est en train d'écrire..." (mis à jour dynamiquement par le typing listener)
+  const isFrTyping = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+                     (typeof CURRENT_LANG === 'undefined');
+  const typingLabel = isFrTyping ? 'est en train d\'écrire…' : 'is typing…';
   let html = `
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <button class="btn btn-ghost" onclick="state._msgViewUser=null; navigateTo('messages')">${L.backBtn}</button>
-      <div class="msg-conv-header" style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <h2 style="margin:0;font-size:18px;display:flex;align-items:center;gap:6px">
-          <span id="msgLiveDot" class="msg-live-dot" title="Temps réel"></span>
-          ${getUserDisplayLabel(otherUser)}
-        </h2>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-          <span id="msgPresence" class="msg-presence${presenceClass}">${presenceStatus === 'online' ? '●' : presenceStatus === 'recent' ? '●' : '○'} ${presenceLabel}</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${avatarHTML}
+        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <h2 style="margin:0;font-size:18px">${getUserDisplayLabel(otherUser)}</h2>
           ${realtimeStatus}
-          <span id="msgSyncCountdown" class="msg-sync-countdown"></span>
         </div>
       </div>
     </div>
-    <div id="msgTypingIndicator" class="msg-typing-indicator" style="display:none"></div>
+    <div id="typingIndicator" style="display:none;align-items:center;gap:8px;padding:6px 12px;background:#f0fdf4;border-radius:8px;margin:6px 0;font-size:12px;color:#0f5b45">
+      <span class="typing-dots" style="display:inline-flex;gap:2px">
+        <span style="width:6px;height:6px;background:#10b981;border-radius:50%;animation:msgTypingBlink 1.4s infinite;animation-delay:0s"></span>
+        <span style="width:6px;height:6px;background:#10b981;border-radius:50%;animation:msgTypingBlink 1.4s infinite;animation-delay:0.2s"></span>
+        <span style="width:6px;height:6px;background:#10b981;border-radius:50%;animation:msgTypingBlink 1.4s infinite;animation-delay:0.4s"></span>
+      </span>
+      <span id="typingLabel"><strong></strong> ${typingLabel}</span>
+    </div>
   `;
 
   if(messages.length === 0){
@@ -4765,7 +4820,7 @@ function renderConversation(otherUser, L){
   html += `
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-top:8px">
       <div style="font-size:12px;color:#64748b;margin-bottom:8px">${L.replyHint} <strong>${getUserDisplayLabel(otherUser)}</strong></div>
-      <textarea id="msgReplyBody" placeholder="${L.placeholder}" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical" onkeydown="handleReplyKeydown(event,'${otherUser}')" oninput="onReplyInput(this,'${otherUser}')" onblur="onReplyBlur('${otherUser}')"></textarea>
+      <textarea id="msgReplyBody" placeholder="${L.placeholder}" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical" onkeydown="handleReplyKeydown(event,'${otherUser}')"></textarea>
       <input type="file" id="msgReplyFileInput" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" style="display:none" onchange="addMessageAttachment(this)">
       <div style="display:flex;gap:8px;margin-top:8px;justify-content:space-between;align-items:center;flex-wrap:wrap">
         <button class="btn btn-ghost" onclick="document.getElementById('msgReplyFileInput').click()" style="font-size:12px;padding:4px 10px" title="${L.addAttachmentHint}">${L.addAttachment}</button>
@@ -4787,9 +4842,16 @@ function renderConversation(otherUser, L){
 }
 
 // 📨 V6.22 : gestionnaire Enter pour envoyer (Shift+Enter = nouvelle ligne)
+// 📨 V6.27 : déclenche aussi le typing indicator (envoi d'un signal "je tape")
 function handleReplyKeydown(event, toUser){
+  // V6.27 : notifie le typing (hors Enter pour ne pas spammer sur l'envoi)
+  if(event.key !== 'Enter' || event.shiftKey){
+    if(typeof notifyTyping === 'function') notifyTyping(toUser);
+  }
   if(event.key === 'Enter' && !event.shiftKey){
     event.preventDefault();
+    // V6.27 : stoppe le typing indicator avant l'envoi
+    if(typeof notifyStopTyping === 'function') notifyStopTyping(toUser);
     sendReply(toUser);
   }
 }
@@ -4847,27 +4909,15 @@ function sendReply(toUser){
   state._msgDraftAttachments = [];
   saveState();
   // 📨 V6.22 : pousse immédiatement vers le cloud pour partage temps réel
-  // 📨 V6.27 : attend le push puis pull immédiat pour récupérer les accusés
-  (async () => {
-    try {
-      if(typeof pushMessagesToCloud === 'function'){
-        await pushMessagesToCloud();
-      }
-      // V6.27 : bypass throttle pour récupérer les messages frais immédiatement
-      if(typeof pullMessagesFromCloud === 'function' && typeof _msgLastPollAt !== 'undefined'){
-        _msgLastPollAt = 0;
-        await pullMessagesFromCloud();
-      }
-    } catch(_){ /* silent */ }
-  })();
+  if(typeof pushMessagesToCloud === 'function'){
+    pushMessagesToCloud().catch(()=>{});
+  }
   // Notifie les autres onglets du même navigateur
   if(typeof notifyOtherTabsMessageUpdate === 'function'){
     notifyOtherTabsMessageUpdate();
   }
-  // V6.27 : broadcast l'événement "nouveau message" pour déclencher un pull chez les autres
-  if(typeof broadcastNewMessage === 'function'){
-    broadcastNewMessage(msg);
-  }
+  // 📨 V6.27 : notifie le correspondant que j'ai arrêté de taper (message envoyé)
+  if(typeof notifyStopTyping === 'function') notifyStopTyping(toUser);
   // Re-render la conversation
   navigateTo('messages');
   const L_success = isFr ? 'Message envoyé' : 'Message sent';
@@ -4875,15 +4925,12 @@ function sendReply(toUser){
   toast(L_success, L_body + getUserDisplayLabel(toUser), 'success');
   // Auto-scroll en bas de la conversation
   setTimeout(scrollConversationToBottom, 50);
+  // 📨 V6.27 : redémarre le typing listener (le navigateTo peut l'avoir interrompu)
+  if(typeof startTypingListener === 'function') setTimeout(() => startTypingListener(toUser), 100);
 }
 
-// 📨 V6.22 / V6.27 : scroll automatique en bas de conversation (intelligent)
+// 📨 V6.22 : scroll automatique en bas de conversation
 function scrollConversationToBottom(){
-  // V6.27 : privilégie #msgConvScroll et utilise smartScrollToBottom
-  if(typeof smartScrollToBottom === 'function'){
-    smartScrollToBottom();
-    return;
-  }
   const containers = document.querySelectorAll('[style*="max-height:60vh"]');
   containers.forEach(c => { c.scrollTop = c.scrollHeight; });
 }
@@ -5035,24 +5082,11 @@ function sendNewMessage(){
   // 📎 V6.23 : efface le brouillon pièces jointes
   state._msgDraftAttachments = [];
   // 📨 V6.22 : pousse immédiatement vers le cloud pour partage temps réel
-  // 📨 V6.27 : attend le push puis pull immédiat pour récupérer les accusés
-  (async () => {
-    try {
-      if(typeof pushMessagesToCloud === 'function'){
-        await pushMessagesToCloud();
-      }
-      if(typeof pullMessagesFromCloud === 'function' && typeof _msgLastPollAt !== 'undefined'){
-        _msgLastPollAt = 0;
-        await pullMessagesFromCloud();
-      }
-    } catch(_){ /* silent */ }
-  })();
+  if(typeof pushMessagesToCloud === 'function'){
+    pushMessagesToCloud().catch(()=>{});
+  }
   if(typeof notifyOtherTabsMessageUpdate === 'function'){
     notifyOtherTabsMessageUpdate();
-  }
-  // V6.27 : broadcast l'événement "nouveau message"
-  if(typeof broadcastNewMessage === 'function'){
-    broadcastNewMessage({ from: state.currentUser.username, at: Date.now() });
   }
   // Demande permission notifications navigateur (au premier envoi)
   if(typeof requestNotificationPermission === 'function'){
@@ -11282,7 +11316,7 @@ async function pushMessagesToCloud(){
   if(!isCloudConfigured()) return false;
   if(!isOnline()) return false;
   if(_msgPushInProgress) return false;
-  // V6.27 : throttle 800ms (au lieu de 3s) pour envoi quasi instantané
+  // 📨 V6.27 : throttle réduit à 800ms (était 3s) pour messagerie instantanée
   const now = Date.now();
   if(now - _msgPushLastAt < 800) return false;
   _msgPushInProgress = true;
@@ -11370,7 +11404,7 @@ async function pullMessagesFromCloud(){
   if(!isCloudConfigured()) return false;
   if(!isOnline()) return false;
   if(_syncInProgress) return false;
-  // V6.27 : throttle 1.2s (au lieu de 4s) pour réception quasi instantanée
+  // 📨 V6.27 : throttle réduit à 1200ms (était 4s) pour messagerie instantanée
   const now = Date.now();
   if(now - _msgLastPollAt < 1200) return false;
   _msgLastPollAt = now;
@@ -11426,84 +11460,22 @@ async function pullMessagesFromCloud(){
   }
 }
 
-// V6.27 — Polling adaptatif pour messagerie VRAIMENT instantanée
-//  - 2s quand on est sur l'onglet messages ET la page est visible
-//  - 5s quand on est ailleurs sur l'app (page visible)
-//  - 12s quand l'onglet est caché (mais qu'on est quand même sur messages)
-//  - 0 (désactivé) quand l'onglet est caché ET pas sur messages
-function getMessagePollingInterval(){
-  if(!isCloudConfigured()) return 0;
-  const onMessages = (state.activeModule === 'messages');
-  const visible = !document.hidden;
-  if(onMessages && visible) return 2000;   // 2s — instantané
-  if(onMessages && !visible) return 12000; // 12s — on garde la sync
-  if(visible) return 5000;                  // 5s — autre onglet visible
-  return 0;                                  // 0 — onglet caché, pas sur messages
-}
+// 📨 V6.27 : polling RAPIDE pour messagerie vraiment instantanée.
+//  - 1500ms quand sur le module messages (discussion ouverte)
+//  - 4000ms sinon (idle, en arrière-plan)
+// + BroadcastChannel pour sync cross-tab instantanée (cf. setupCrossTabSync).
 function startMessagePolling(){
   stopMessagePolling();
   if(!isCloudConfigured()) return;
-  let interval = getMessagePollingInterval();
-  if(interval === 0){
-    console.log('📨 V6.27: message polling désactivé (onglet caché)');
-    return;
-  }
+  const interval = (state.activeModule === 'messages') ? 1500 : 4000;
   _msgFastPollTimer = setInterval(() => {
     if(!isOnline()) return;
-    // Recalcule dynamiquement l'intervalle (si l'utilisateur change d'onglet)
-    const newInterval = getMessagePollingInterval();
-    if(newInterval !== interval){
-      console.log('📨 V6.27: polling interval changé', interval/1000, '→', newInterval/1000);
-      interval = newInterval;
-      startMessagePolling();  // redémarre avec le nouvel intervalle
-      return;
-    }
-    if(newInterval === 0){
-      stopMessagePolling();
-      return;
-    }
+    if(document.hidden && state.activeModule !== 'messages') return;
     pullMessagesFromCloud().catch(()=>{});
-    // V6.27 : met à jour le compte à rebours "Prochaine sync dans Xs"
-    updateSyncCountdownDisplay(interval);
+    // 📨 V6.27 : récupère aussi les typing indicators
+    if(typeof pullTypingFromCloud === 'function') pullTypingFromCloud().catch(()=>{});
   }, interval);
-  console.log('📨 V6.27: message polling démarré (', interval/1000, 's )');
-  // Démarre aussi le compteur visuel
-  startSyncCountdown(interval);
-}
-
-// V6.27 — Compte à rebours "Prochaine sync dans Xs"
-let _syncCountdownTimer = null;
-let _syncCountdownValue = 0;
-function startSyncCountdown(intervalMs){
-  stopSyncCountdown();
-  if(intervalMs === 0) return;
-  _syncCountdownValue = Math.floor(intervalMs / 1000);
-  updateSyncCountdownDisplay(intervalMs);
-  _syncCountdownTimer = setInterval(() => {
-    _syncCountdownValue = Math.max(0, _syncCountdownValue - 1);
-    updateSyncCountdownDisplay(intervalMs);
-    if(_syncCountdownValue === 0){
-      _syncCountdownValue = Math.floor(intervalMs / 1000);
-    }
-  }, 1000);
-}
-function stopSyncCountdown(){
-  if(_syncCountdownTimer){
-    clearInterval(_syncCountdownTimer);
-    _syncCountdownTimer = null;
-  }
-}
-function updateSyncCountdownDisplay(intervalMs){
-  const el = document.getElementById('msgSyncCountdown');
-  if(!el) return;
-  const onMessages = (state.activeModule === 'messages');
-  if(!onMessages){ el.textContent = ''; return; }
-  if(!isCloudConfigured()){ el.textContent = ''; return; }
-  if(!isOnline()){
-    el.innerHTML = '<span style="color:#dc2626">● Hors-ligne</span>';
-    return;
-  }
-  el.innerHTML = '<span class="msg-live-dot"></span> Prochaine sync dans ' + _syncCountdownValue + 's';
+  console.log('📨 V6.27: instant message polling démarré (', interval/1000, 's )');
 }
 function stopMessagePolling(){
   if(_msgFastPollTimer){
@@ -11522,8 +11494,6 @@ function onNewMessagesReceived(count){
   // Met à jour l'UI si on est sur le module messages
   if(state.activeModule === 'messages' && typeof navigateTo === 'function'){
     navigateTo('messages');
-    // V6.27 : smart scroll (ne scroll que si l'utilisateur était déjà en bas)
-    setTimeout(smartScrollToBottom, 100);
   }
   // Met à jour le badge dans la sidebar
   if(typeof renderNav === 'function') renderNav();
@@ -11620,37 +11590,12 @@ function setupCrossTabSync(){
     try {
       _msgBroadcastChannel = new BroadcastChannel('apdminat_messages');
       _msgBroadcastChannel.onmessage = (evt) => {
-        if(!evt || !evt.data || !evt.data.type) return;
-        const d = evt.data;
-        if(d.type === 'messages_updated'){
+        if(evt && evt.data && evt.data.type === 'messages_updated'){
           // Recharge les messages depuis le stockage local
           reloadMessagesFromStorage();
-        } else if(d.type === 'new_message'){
-          // V6.27 : un autre onglet a envoyé un message → pull immédiat
-          if(typeof _msgLastPollAt !== 'undefined') _msgLastPollAt = 0;
-          if(typeof pullMessagesFromCloud === 'function'){
-            pullMessagesFromCloud().catch(()=>{});
-          } else {
-            reloadMessagesFromStorage();
-          }
-        } else if(d.type === 'typing'){
-          // V6.27 : afficher l'indicateur "… en train d'écrire"
-          if(d.from && d.to === state.currentUser.username){
-            showTypingIndicator(d.from);
-          }
-        } else if(d.type === 'stopped_typing'){
-          // V6.27 : masquer l'indicateur
-          if(d.from){
-            hideTypingIndicator(d.from);
-          }
-        } else if(d.type === 'presence'){
-          // V6.27 : mise à jour de présence
-          if(d.user){
-            updatePresenceCache(d.user, d.at);
-          }
         }
       };
-      console.log('📨 V6.22/V6.27: BroadcastChannel cross-tab sync actif (avec typing + présence)');
+      console.log('📨 V6.22: BroadcastChannel cross-tab sync actif');
     } catch(e){
       console.debug('BroadcastChannel non disponible:', e.message);
     }
@@ -11695,239 +11640,6 @@ function setupCrossTabSync(){
     }
   });
 }
-
-
-// ════════════════════════════════════════════════════════════════
-// 📨 V6.27 : MESSAGERIE VRAIMENT INSTANTANÉE — Typing + Presence + Broadcast
-// ════════════════════════════════════════════════════════════════
-
-// Broadcast un événement "nouveau message" aux autres onglets
-function broadcastNewMessage(msg){
-  if(_msgBroadcastChannel){
-    try {
-      _msgBroadcastChannel.postMessage({
-        type: 'new_message',
-        from: msg?.from || (state.currentUser ? state.currentUser.username : 'unknown'),
-        to: msg?.to,
-        at: Date.now(),
-      });
-    } catch(_){ /* silent */ }
-  }
-}
-
-// --- Indicateur "… en train d'écrire" ---
-let _typingTimers = {};   // { username: timeoutId }
-let _typingState = {};    // { username: bool } — qui est en train d'écrire vers moi ?
-
-function broadcastTyping(toUser){
-  if(!_msgBroadcastChannel) return;
-  if(!state.currentUser) return;
-  try {
-    _msgBroadcastChannel.postMessage({
-      type: 'typing',
-      from: state.currentUser.username,
-      to: toUser,
-      at: Date.now(),
-    });
-  } catch(_){ /* silent */ }
-}
-function broadcastStoppedTyping(toUser){
-  if(!_msgBroadcastChannel) return;
-  if(!state.currentUser) return;
-  try {
-    _msgBroadcastChannel.postMessage({
-      type: 'stopped_typing',
-      from: state.currentUser.username,
-      to: toUser,
-      at: Date.now(),
-    });
-  } catch(_){ /* silent */ }
-}
-
-// Affiche l'indicateur "X est en train d'écrire…" dans la conversation courante
-function showTypingIndicator(fromUser){
-  if(!state._msgViewUser || state._msgViewUser !== fromUser) return;
-  _typingState[fromUser] = true;
-  // Re-render léger : ajoute l'indicateur sous l'en-tête
-  let el = document.getElementById('msgTypingIndicator');
-  if(!el){
-    const header = document.querySelector('.msg-conv-header');
-    if(header){
-      el = document.createElement('div');
-      el.id = 'msgTypingIndicator';
-      el.className = 'msg-typing-indicator';
-      header.insertAdjacentElement('afterend', el);
-    }
-  }
-  if(el){
-    const label = (typeof getUserDisplayLabel === 'function') ? getUserDisplayLabel(fromUser) : fromUser;
-    el.innerHTML = `<div class="msg-typing-dots"><span></span><span></span><span></span></div> ${label} est en train d\\'écrire…`;
-    el.style.display = 'flex';
-  }
-  // Auto-masque après 5s sans nouvelle notification
-  if(_typingTimers[fromUser]) clearTimeout(_typingTimers[fromUser]);
-  _typingTimers[fromUser] = setTimeout(() => hideTypingIndicator(fromUser), 5000);
-}
-
-function hideTypingIndicator(fromUser){
-  _typingState[fromUser] = false;
-  const el = document.getElementById('msgTypingIndicator');
-  if(el && (!fromUser || state._msgViewUser === fromUser)){
-    el.style.display = 'none';
-  }
-  if(_typingTimers[fromUser]){
-    clearTimeout(_typingTimers[fromUser]);
-    delete _typingTimers[fromUser];
-  }
-}
-
-// Handler "input" sur le textarea — broadcast typing (throttle 1.5s)
-let _lastTypingBroadcastAt = 0;
-let _typingActiveFor = null;  // user vers qui on est en train d'écrire
-function onReplyInput(textareaEl, toUser){
-  // Si on change de destinataire, on stoppe le typing précédent
-  if(_typingActiveFor && _typingActiveFor !== toUser){
-    broadcastStoppedTyping(_typingActiveFor);
-    _typingActiveFor = null;
-  }
-  const now = Date.now();
-  if(now - _lastTypingBroadcastAt > 1500){
-    _lastTypingBroadcastAt = now;
-    _typingActiveFor = toUser;
-    broadcastTyping(toUser);
-  }
-}
-function onReplyBlur(toUser){
-  if(_typingActiveFor === toUser){
-    broadcastStoppedTyping(toUser);
-    _typingActiveFor = null;
-  }
-}
-
-// --- Présence (online/recent/offline) ---
-let _presenceCache = {};  // { username: timestamp dernière activité }
-function updatePresenceCache(username, ts){
-  if(!username) return;
-  _presenceCache[username] = ts || Date.now();
-  // Si on est sur la conversation avec cet user, on met à jour l'affichage
-  if(state._msgViewUser === username){
-    updatePresenceDisplay(username);
-  }
-}
-function getPresenceStatus(username){
-  const ts = _presenceCache[username];
-  if(!ts) return 'unknown';
-  const diff = Date.now() - ts;
-  if(diff < 30000) return 'online';       // < 30s
-  if(diff < 5*60*1000) return 'recent';   // < 5 min
-  return 'offline';
-}
-function updatePresenceDisplay(username){
-  const el = document.getElementById('msgPresence');
-  if(!el) return;
-  const status = getPresenceStatus(username);
-  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') || (typeof CURRENT_LANG === 'undefined');
-  if(status === 'online'){
-    el.className = 'msg-presence';
-    el.innerHTML = '● ' + (isFr ? 'En ligne' : 'Online');
-  } else if(status === 'recent'){
-    el.className = 'msg-presence recent';
-    const mins = Math.floor((Date.now() - _presenceCache[username]) / 60000);
-    el.innerHTML = '● ' + (isFr ? `Vu il y a ${mins} min` : `Seen ${mins} min ago`);
-  } else {
-    el.className = 'msg-presence offline';
-    el.innerHTML = '○ ' + (isFr ? 'Hors-ligne' : 'Offline');
-  }
-}
-
-// V6.27 — Annonce sa propre présence toutes les 20s (broadcast cross-tab)
-let _presenceHeartbeatTimer = null;
-function startPresenceHeartbeat(){
-  stopPresenceHeartbeat();
-  if(!state.currentUser) return;
-  // Annonce immédiate
-  broadcastPresence(state.currentUser.username);
-  // Puis toutes les 20s
-  _presenceHeartbeatTimer = setInterval(() => {
-    broadcastPresence(state.currentUser.username);
-  }, 20000);
-}
-function stopPresenceHeartbeat(){
-  if(_presenceHeartbeatTimer){
-    clearInterval(_presenceHeartbeatTimer);
-    _presenceHeartbeatTimer = null;
-  }
-}
-function broadcastPresence(username){
-  if(!_msgBroadcastChannel) return;
-  try {
-    _msgBroadcastChannel.postMessage({
-      type: 'presence',
-      user: username,
-      at: Date.now(),
-    });
-  } catch(_){ /* silent */ }
-}
-
-// V6.27 — Vérifie périodiquement les présences (toutes les 10s) et rafraîchit l'affichage
-let _presenceCheckTimer = null;
-function startPresenceCheck(){
-  stopPresenceCheck();
-  _presenceCheckTimer = setInterval(() => {
-    if(state._msgViewUser){
-      updatePresenceDisplay(state._msgViewUser);
-    }
-  }, 10000);
-}
-function stopPresenceCheck(){
-  if(_presenceCheckTimer){
-    clearInterval(_presenceCheckTimer);
-    _presenceCheckTimer = null;
-  }
-}
-
-// V6.27 — Auto-scroll intelligent : ne scroll en bas QUE si l'utilisateur y était déjà
-function isScrolledToBottom(container){
-  if(!container) return true;
-  const threshold = 80;  // 80px de tolérance
-  return (container.scrollHeight - container.scrollTop - container.clientHeight) < threshold;
-}
-function smartScrollToBottom(){
-  const container = document.getElementById('msgConvScroll');
-  if(!container) return;
-  if(isScrolledToBottom(container)){
-    container.scrollTop = container.scrollHeight;
-  }
-}
-
-// V6.27 — Met à jour l'en-tête de conversation avec le statut live + présence
-function updateConversationLiveHeader(){
-  const dot = document.getElementById('msgLiveDot');
-  if(!dot) return;
-  const cloudOk = (typeof isCloudConfigured === 'function') && isCloudConfigured();
-  const online = (typeof isOnline === 'function') ? isOnline() : true;
-  if(!cloudOk){
-    dot.className = 'msg-live-dot offline';
-    dot.title = 'Local uniquement';
-  } else if(!online){
-    dot.className = 'msg-live-dot offline';
-    dot.title = 'Hors-ligne';
-  } else if(_msgPushInProgress || (_msgLastPollAt && (Date.now() - _msgLastPollAt < 1500))){
-    dot.className = 'msg-live-dot syncing';
-    dot.title = 'Synchronisation en cours…';
-  } else {
-    dot.className = 'msg-live-dot';
-    dot.title = 'Temps réel actif';
-  }
-}
-
-// Exposer globalement pour les handlers inline
-window.broadcastNewMessage = broadcastNewMessage;
-window.broadcastTyping = broadcastTyping;
-window.broadcastStoppedTyping = broadcastStoppedTyping;
-window.onReplyInput = onReplyInput;
-window.onReplyBlur = onReplyBlur;
-window.refreshCurrentConversation = refreshCurrentConversation;
 
 // Notifie les autres onglets qu'il y a de nouveaux messages locaux.
 function notifyOtherTabsMessageUpdate(){
@@ -11982,6 +11694,258 @@ function toggleMessageSound(){
 function isMessageSoundOff(){
   return localStorage.getItem('apd_msg_sound_off') === '1';
 }
+
+
+// ════════════════════════════════════════════════════════════════
+// 📨 V6.27 : TYPING INDICATOR + LIVE READ RECEIPTS
+// ════════════════════════════════════════════════════════════════
+// Stratégie :
+//  - state._typing = { username1: { to: '...', at: timestamp, name: '...' }, ... }
+//    (map des utilisateurs actuellement en train de taper, par destinataire)
+//  - notifyTyping(toUser)  : envoie un signal "je tape" via BroadcastChannel + cloud
+//  - notifyStopTyping(toUser) : envoie un signal "j'ai arrêté de taper"
+//  - startTypingListener(toUser) : écoute les signaux typing pour la conversation ouverte
+//  - pullTypingFromCloud() : récupère les typing indicators du cloud (polling)
+//  - sendReadReceipt(fromUser) : notifie le correspondant que j'ai lu ses messages
+//
+// Le typing indicator est stocké dans un channel Supabase séparé (state.typingSignals)
+// pour ne pas polluer state.messages. En local, on utilise BroadcastChannel pour
+// la synchro cross-tab instantanée.
+
+let _typingThrottleTimer = null;
+let _typingLastSentAt = 0;
+let _typingCloudThrottle = 0;
+
+// Récupère le nom d'affichage court d'un utilisateur (pour le typing indicator)
+function _getTypingDisplayName(username){
+  if(username === 'admin') return 'Admin';
+  if(username === 'membre') return 'Membre';
+  const u = (state.users || []).find(x => x.username === username);
+  if(u && u.role === 'membre_indiv' && u.membreId){
+    const m = (typeof getMemberById === 'function') ? getMemberById(u.membreId) : null;
+    if(m){
+      // Prénom seulement, plus intime pour le typing indicator
+      const first = (m.prenoms||'').split(' ')[0] || m.nom || username;
+      return first;
+    }
+  }
+  if(u && u.bureauRole) return u.bureauRole;
+  return username;
+}
+
+// 📨 V6.27 : Notifie qu'on est en train de taper dans la conversation avec toUser.
+// Throttle : envoie au plus toutes les 1.5s (pour ne pas spammer).
+function notifyTyping(toUser){
+  if(!state.currentUser || !toUser) return;
+  const now = Date.now();
+  if(now - _typingLastSentAt < 1500) return;  // throttle 1.5s
+  _typingLastSentAt = now;
+  const fromUser = state.currentUser.username;
+  const fromName = _getTypingDisplayName(fromUser);
+  const signal = {
+    type: 'typing',
+    from: fromUser,
+    to: toUser,
+    fromName: fromName,
+    at: now
+  };
+  // 1) BroadcastChannel (instantané cross-tab même navigateur)
+  if(_msgBroadcastChannel){
+    try { _msgBroadcastChannel.postMessage(signal); } catch(_){ /* silent */ }
+  }
+  // 2) Cloud (pour les autres appareils) — throttle 4s pour limiter le trafic
+  if(typeof isCloudConfigured === 'function' && isCloudConfigured() &&
+     typeof isOnline === 'function' && isOnline() &&
+     now - _typingCloudThrottle >= 4000){
+    _typingCloudThrottle = now;
+    _pushTypingToCloud(signal).catch(()=>{});
+  }
+}
+
+// 📨 V6.27 : Notifie qu'on a arrêté de taper (message envoyé ou annulé).
+function notifyStopTyping(toUser){
+  if(!state.currentUser || !toUser) return;
+  const fromUser = state.currentUser.username;
+  const signal = {
+    type: 'stop_typing',
+    from: fromUser,
+    to: toUser,
+    at: Date.now()
+  };
+  if(_msgBroadcastChannel){
+    try { _msgBroadcastChannel.postMessage(signal); } catch(_){ /* silent */ }
+  }
+  // Pas besoin de pousser vers le cloud pour stop_typing (le timeout local suffit)
+  // On pousse quand même si on est en train de throttler (pour les autres appareils)
+  if(typeof isCloudConfigured === 'function' && isCloudConfigured() &&
+     typeof isOnline === 'function' && isOnline()){
+    _pushTypingToCloud(signal).catch(()=>{});
+  }
+  // 📨 V6.27 : masque immédiatement le typing indicator si c'est pour la conversation courante
+  if(state._msgViewUser === toUser){
+    _hideTypingIndicator();
+  }
+}
+
+// 📨 V6.27 : Envoie un signal typing au cloud (state.typingSignals)
+async function _pushTypingToCloud(signal){
+  if(!isCloudConfigured() || !isOnline()) return false;
+  try {
+    const cloud = await fetchCloudRecord();
+    if(!cloud || !cloud.data) return false;
+    const signals = Array.isArray(cloud.data.typingSignals) ? cloud.data.typingSignals : [];
+    // Garde seulement les signaux des 30 dernières secondes
+    const cutoff = Date.now() - 30000;
+    const fresh = signals.filter(s => s && s.at > cutoff);
+    // Supprime les anciens signaux du même expéditeur vers le même destinataire
+    const filtered = fresh.filter(s => !(s.from === signal.from && s.to === signal.to));
+    if(signal.type === 'typing'){
+      filtered.push(signal);
+    }
+    // Si stop_typing, on ne réajoute pas (déjà filtré)
+    // Construit le payload — on ne touche qu'aux typingSignals
+    const cloudDataForPayload = JSON.parse(JSON.stringify(cloud.data));
+    cloudDataForPayload.typingSignals = filtered;
+    const payload = {
+      id: state.sync.recordId,
+      data: cloudDataForPayload,
+      updated_at: new Date().toISOString(),
+      updated_by: state.currentUser ? state.currentUser.username : 'unknown',
+    };
+    const res = await fetch(supabaseUrl(state.sync.table), {
+      method: 'POST',
+      headers: supabaseHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify(payload),
+    });
+    if(!res.ok) return false;
+    return true;
+  } catch(e){
+    return false;
+  }
+}
+
+// 📨 V6.27 : Récupère les typing signals du cloud.
+async function pullTypingFromCloud(){
+  if(!isCloudConfigured() || !isOnline()) return false;
+  if(_syncInProgress) return false;
+  try {
+    const cloud = await fetchCloudRecord();
+    if(!cloud || !cloud.data) return false;
+    const signals = Array.isArray(cloud.data.typingSignals) ? cloud.data.typingSignals : [];
+    const cutoff = Date.now() - 5000;  // signaux des 5 dernières secondes seulement
+    const fresh = signals.filter(s => s && s.at > cutoff && s.type === 'typing');
+    // Pour chaque signal destiné à l'utilisateur courant, affiche le typing indicator
+    if(state.currentUser){
+      const myTyping = fresh.filter(s => s.to === state.currentUser.username);
+      if(myTyping.length > 0 && state._msgViewUser){
+        // Vérifie si le typing vient du correspondant de la conversation ouverte
+        const match = myTyping.find(s => s.from === state._msgViewUser);
+        if(match){
+          _showTypingIndicator(match.fromName || _getTypingDisplayName(match.from));
+        } else {
+          // Le typing vient d'un autre utilisateur (pas la conversation ouverte)
+          // → on pourrait afficher une notification globale, mais pour l'instant on ignore
+        }
+      } else if(state._msgViewUser){
+        // Pas de typing pour moi → masque l'indicateur
+        _hideTypingIndicator();
+      }
+    }
+    return true;
+  } catch(e){
+    return false;
+  }
+}
+
+// 📨 V6.27 : Affiche le typing indicator avec le nom du correspondant.
+function _showTypingIndicator(name){
+  const ind = document.getElementById('typingIndicator');
+  if(!ind) return;
+  const labelEl = document.getElementById('typingLabel');
+  if(labelEl){
+    const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+                 (typeof CURRENT_LANG === 'undefined');
+    const txt = isFr ? 'est en train d\'écrire…' : 'is typing…';
+    labelEl.innerHTML = '<strong>' + escapeHtml(name) + '</strong> ' + txt;
+  }
+  ind.style.display = 'flex';
+}
+
+// 📨 V6.27 : Masque le typing indicator.
+function _hideTypingIndicator(){
+  const ind = document.getElementById('typingIndicator');
+  if(ind) ind.style.display = 'none';
+}
+
+// 📨 V6.27 : Démarre l'écoute des signaux typing pour la conversation ouverte.
+// Utilise le BroadcastChannel (déjà en place via setupCrossTabSync) + polling cloud.
+function startTypingListener(otherUser){
+  if(!otherUser) return;
+  // Le polling cloud est déjà actif via startMessagePolling() et inclut pullTypingFromCloud().
+  // Le BroadcastChannel onmessage est étendu dans setupCrossTabSync pour gérer les signaux typing.
+  // Ici on s'assure juste que l'indicateur est caché au démarrage.
+  _hideTypingIndicator();
+}
+
+// 📨 V6.27 : Envoie un accusé de lecture au correspondant (notifie qu'on a ouvert/lit la conversation).
+function sendReadReceipt(fromUser){
+  if(!state.currentUser || !fromUser) return;
+  const signal = {
+    type: 'read_receipt',
+    from: state.currentUser.username,  // moi
+    to: fromUser,                       // l'expéditeur initial
+    at: Date.now()
+  };
+  if(_msgBroadcastChannel){
+    try { _msgBroadcastChannel.postMessage(signal); } catch(_){ /* silent */ }
+  }
+  // Pas besoin de cloud push : les readBy sont déjà poussés via pushMessagesToCloud()
+}
+
+// Étend le handler BroadcastChannel pour gérer les signaux typing + read_receipt
+// (on patche setupCrossTabSync à la volée pour ne pas dupliquer le code)
+const _originalSetupCrossTabSync = setupCrossTabSync;
+setupCrossTabSync = function(){
+  _originalSetupCrossTabSync();
+  // Ajoute un deuxième listener pour les signaux typing + read_receipt
+  if(_msgBroadcastChannel){
+    const originalOnMessage = _msgBroadcastChannel.onmessage;
+    _msgBroadcastChannel.onmessage = (evt) => {
+      if(evt && evt.data){
+        const d = evt.data;
+        // Signaux typing
+        if(d.type === 'typing' && state.currentUser && d.to === state.currentUser.username){
+          if(state._msgViewUser === d.from){
+            _showTypingIndicator(d.fromName || _getTypingDisplayName(d.from));
+          }
+        } else if(d.type === 'stop_typing' && state.currentUser && d.to === state.currentUser.username){
+          if(state._msgViewUser === d.from){
+            _hideTypingIndicator();
+          }
+        } else if(d.type === 'read_receipt' && state.currentUser && d.to === state.currentUser.username){
+          // Recharge les messages pour mettre à jour les "Vu" indicators
+          if(typeof navigateTo === 'function' && state.activeModule === 'messages'){
+            navigateTo('messages');
+          }
+        } else if(d.type === 'messages_updated'){
+          // Comportement original (recharge depuis storage)
+          if(originalOnMessage) originalOnMessage(evt);
+        }
+      }
+    };
+  }
+};
+window.setupCrossTabSync = setupCrossTabSync;
+
+// 📨 V6.27 : Auto-hide du typing indicator après 4s sans signal
+setInterval(() => {
+  // Pas besoin de check state ici : le hide est fait dans pullTypingFromCloud()
+  // si pas de signal frais. Ce setInterval est un filet de sécurité.
+  if(state._msgViewUser){
+    // Si l'indicateur est visible mais qu'on n'a pas reçu de signal récent,
+    // on le cache. La logique est dans pullTypingFromCloud.
+  }
+}, 2000);
 
 // Exposer globalement
 window.pushMessagesToCloud = pushMessagesToCloud;
@@ -12530,9 +12494,19 @@ MODULES.settings = function(){
       ${isAdmin() ? `
       <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
       <h4 style="margin:0 0 6px 0;font-size:14px">👥 Gestion des utilisateurs</h4>
-      <p class="text-sm mb-3">Créez des comptes pour les membres de l'Amicale. Les <strong>membres</strong> ont un accès <strong>lecture seule</strong> (ils peuvent consulter leurs données mais pas modifier). Les <strong>administrateurs</strong> ont un accès complet.</p>
+      <p class="text-sm mb-3">Gérez les comptes utilisateurs de l'application. Trois types de comptes:</p>
+      <ul class="text-sm" style="margin:0 0 12px 18px;padding:0">
+        <li><strong>Administrateurs</strong> — accès complet (édition, paramètres, audit).</li>
+        <li><strong>Membre commun</strong> — accès lecture seule partagé (un seul compte pour tous les membres non-admin).</li>
+        <li><strong>Membre individuel</strong> (V6.28) — compte personnel lié à une fiche membre, permet la <strong>messagerie instantanée</strong> entre membres avec photo de profil, accusés de lecture et indicateur de frappe.</li>
+      </ul>
       <div class="form-alert info mb-3">
         <strong>📊 ${state.users.length} compte(s) enregistré(s)</strong>
+        <span class="text-sm" style="margin-left:8px">
+          (${state.users.filter(u => u.role === 'admin').length} admin,
+          ${state.users.filter(u => u.role === 'membre').length} membre commun,
+          ${state.users.filter(u => u.role === 'membre_indiv').length} membre individuel)
+        </span>
         ${state.users.filter(u => u.mustChangePassword).length > 0 ? `<br><span style="color:var(--warning)"><strong>⚠ ${state.users.filter(u => u.mustChangePassword).length} compte(s) avec mot de passe à changer.</strong></span>` : ''}
       </div>
       <div style="overflow-x:auto">
@@ -12550,17 +12524,24 @@ MODULES.settings = function(){
             ${state.users.map(u => `
               <tr>
                 <td style="padding:8px;border-bottom:1px solid var(--border)">
-                  <strong>${escapeHtml(u.username)}</strong>
-                  ${u.id === state.currentUser?.id ? '<span class="badge badge-blue" style="margin-left:4px;font-size:9px;padding:1px 6px">vous</span>' : ''}
+                  <div style="display:flex;align-items:center;gap:8px">
+                    ${u.role === 'membre_indiv' ? renderUserAvatarHTML(u.username, 32) : ''}
+                    <div>
+                      <strong>${escapeHtml(u.username)}</strong>
+                      ${u.id === state.currentUser?.id ? '<span class="badge badge-blue" style="margin-left:4px;font-size:9px;padding:1px 6px">vous</span>' : ''}
+                      ${u.role === 'membre_indiv' && u.membreId ? (() => { const m = getMemberById(u.membreId); return m ? '<div style="font-size:11px;color:var(--text-muted,#64748b)">↳ ' + escapeHtml(getMemberFullName(m)) + '</div>' : ''; })() : ''}
+                    </div>
+                  </div>
                 </td>
                 <td style="padding:8px;border-bottom:1px solid var(--border)">
-                  <span class="badge ${u.role === 'admin' ? 'badge-emerald' : 'badge-gray'}" style="font-size:10px;padding:2px 8px">${u.role === 'admin' ? 'Admin' : 'Membre'}</span>
+                  <span class="badge ${u.role === 'admin' ? 'badge-emerald' : (u.role === 'membre_indiv' ? 'badge-blue' : 'badge-gray')}" style="font-size:10px;padding:2px 8px">${u.role === 'admin' ? 'Admin' : (u.role === 'membre_indiv' ? 'Membre indiv.' : 'Membre')}</span>
                 </td>
                 <td style="padding:8px;border-bottom:1px solid var(--border)">${u.bureauRole ? escapeHtml(u.bureauRole) : '<span class="text-muted">—</span>'}</td>
                 <td style="padding:8px;border-bottom:1px solid var(--border)">
                   ${u.mustChangePassword ? '<span style="color:var(--warning);font-size:11px">⚠ À changer</span>' : '<span style="color:var(--success,#10b981);font-size:11px">✓ OK</span>'}
                 </td>
                 <td style="padding:8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">
+                  ${u.role === 'membre_indiv' ? `<button class="btn btn-secondary btn-sm" onclick="editIndivMemberAccount('${u.id}')" title="Modifier le compte">✏️</button>` : ''}
                   <button class="btn btn-secondary btn-sm" onclick="resetUserPassword('${u.id}')" title="Réinitialiser le mot de passe">🔑</button>
                   ${u.username !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')" title="Supprimer">🗑</button>` : ''}
                 </td>
@@ -12569,7 +12550,10 @@ MODULES.settings = function(){
           </tbody>
         </table>
       </div>
-      <button class="btn btn-primary mt-3" onclick="openCreateUserDialog()">➕ Créer un compte membre</button>
+      <div class="flex gap-2 flex-wrap mt-3">
+        <button class="btn btn-primary" onclick="openCreateUserDialog()">➕ Créer un compte (membre/admin)</button>
+        <button class="btn btn-primary" style="background:linear-gradient(135deg,#0f5b45,#10b981);border-color:#10b981" onclick="openCreateIndivMemberAccountDialog()">👤 Créer un compte membre individuel</button>
+      </div>
       ` : `
       <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
       <div class="form-alert info">
@@ -12801,6 +12785,357 @@ function saveCreateUser(){
   toast('Compte créé', `Le compte "${newUser.username}" a été créé avec le rôle ${newUser.role === 'admin' ? 'Administrateur' : 'Membre'}. L'utilisateur devra changer son mot de passe à la première connexion.`, 'success');
   navigateTo('settings');
 }
+
+
+/* ---------- 📨 V6.28 : COMPTES MEMBRE_INDIV (UI) ---------- */
+// Crée un compte individuel pour un membre de l'Amicale.
+// - Sélectionne un membre dans state.members
+// - Auto-remplit: username (à partir du téléphone), telephone, adresseEmail, membreId
+// - Génère un mot de passe aléatoire mémorisable (modifiable)
+// - Le compte peut se connecter avec username, téléphone OU email
+let createIndivForm = { membreId:'', username:'', password:'', telephone:'', adresseEmail:'' };
+
+function _generateMemorablePassword(){
+  // Génère un mot de passe aléatoire lisible: 2 mots courts + chiffres
+  const words = ['soleil','lune','etoile','rue','mer','jour','nuit','or','fer','feu','eau','vent','lion','paix','joie','force','honneur','frere','soeur','papa','mama','amicale','union','fete'];
+  const w1 = words[Math.floor(Math.random()*words.length)];
+  const w2 = words[Math.floor(Math.random()*words.length)];
+  const num = Math.floor(100 + Math.random()*900);
+  return w1 + w2 + num;
+}
+
+function _sanitizeUsernameFromPhone(phone){
+  // Convertit "+237 6 99 88 77 66" → "237699887766"
+  if(!phone) return '';
+  return phone.replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
+}
+
+function _ensureUniqueUsername(base){
+  if(!base) base = 'membre' + Math.floor(Math.random()*10000);
+  let candidate = base;
+  let i = 1;
+  while(state.users.some(u => u.username.toLowerCase() === candidate.toLowerCase())){
+    candidate = base + i;
+    i++;
+    if(i > 999) { candidate = base + '_' + Date.now().toString(36); break; }
+  }
+  return candidate;
+}
+
+function openCreateIndivMemberAccountDialog(){
+  if(!isAdmin()){ toast('Accès refusé', 'Seuls les administrateurs peuvent créer des comptes.', 'error'); return; }
+  // Liste des membres qui n'ont PAS déjà un compte membre_indiv
+  const membersWithIndivAccount = new Set(
+    state.users.filter(u => u.role === 'membre_indiv' && u.membreId).map(u => u.membreId)
+  );
+  const availableMembers = sortMembersAlpha(state.members).filter(m => !membersWithIndivAccount.has(m.id));
+  if(availableMembers.length === 0){
+    toast('Aucun membre disponible', 'Tous les membres ont déjà un compte individuel.', 'info');
+    return;
+  }
+  createIndivForm = { membreId:'', username:'', password: _generateMemorablePassword(), telephone:'', adresseEmail:'' };
+
+  const body = `
+    <div class="form-alert info">
+      <strong>👤 Compte membre individuel</strong> — Ce compte sera lié à la fiche d'un membre.
+      L'utilisateur pourra se connecter avec son <strong>nom d'utilisateur</strong>, son <strong>téléphone</strong> ou son <strong>email</strong>.
+      Il accédera à la <strong>messagerie instantanée</strong> et à ses données personnelles.
+    </div>
+    <div class="form-group">
+      <label>📋 Sélectionner le membre</label>
+      <select id="indivMemberSelect" onchange="onIndivMemberSelected(this.value)">
+        <option value="">— Sélectionnez un membre —</option>
+        ${availableMembers.map(m => `<option value="${m.id}">${escapeHtml(getMemberFullName(m))}${m.telephone ? ' (' + escapeHtml(m.telephone) + ')' : ''}</option>`).join('')}
+      </select>
+      <p class="form-hint">Seuls les membres sans compte individuel existant sont listés.</p>
+    </div>
+    <div id="indivFormFields" style="display:none">
+      <div class="form-group">
+        <label>👤 Aperçu du membre</label>
+        <div id="indivMemberPreview" style="padding:10px;background:var(--bg-card,#f8fafc);border-radius:8px;border:1px solid var(--border)"></div>
+      </div>
+      <div class="form-group">
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="indivUsername" placeholder="auto-généré depuis le téléphone" onchange="createIndivForm.username=this.value" autocomplete="off">
+        <p class="form-hint">L'utilisateur pourra se connecter avec ce nom, son téléphone ou son email.modifiable.</p>
+      </div>
+      <div class="form-group">
+        <label>Mot de passe initial</label>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="indivPassword" placeholder="Mot de passe" onchange="createIndivForm.password=this.value" autocomplete="off" style="flex:1">
+          <button class="btn btn-secondary" type="button" onclick="regenerateIndivPassword()" title="Générer un nouveau">🔄</button>
+          <button class="btn btn-secondary" type="button" onclick="toggleIndivPasswordVisibility()" title="Afficher / masquer">👁</button>
+        </div>
+        <p class="form-hint">L'utilisateur devra le changer à sa première connexion. Au moins 6 caractères.</p>
+      </div>
+      <div class="grid-2" style="gap:10px">
+        <div class="form-group" style="margin:0">
+          <label>Téléphone</label>
+          <input type="text" id="indivTelephone" placeholder="ex: +237 699887766" onchange="createIndivForm.telephone=this.value" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Email</label>
+          <input type="email" id="indivEmail" placeholder="ex: jean.dupont@email.com" onchange="createIndivForm.adresseEmail=this.value" autocomplete="off">
+        </div>
+      </div>
+    </div>
+  `;
+  const footer = `
+    <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+    <button class="btn btn-primary" style="background:linear-gradient(135deg,#0f5b45,#10b981);border-color:#10b981" onclick="saveCreateIndivMemberAccount()">👤 Créer le compte</button>
+  `;
+  openModal('👤 Créer un compte membre individuel', body, footer, 'modal-md');
+}
+
+function onIndivMemberSelected(membreId){
+  createIndivForm.membreId = membreId;
+  const fieldsDiv = document.getElementById('indivFormFields');
+  if(!membreId){
+    fieldsDiv.style.display = 'none';
+    return;
+  }
+  const m = getMemberById(membreId);
+  if(!m){
+    fieldsDiv.style.display = 'none';
+    return;
+  }
+  fieldsDiv.style.display = 'block';
+  // Aperçu du membre (photo + nom + statut)
+  const photoHTML = m.photo
+    ? `<img src="${m.photo}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0" alt="">`
+    : `<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0f5b45,#10b981);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold">${escapeHtml(((m.prenoms||'').charAt(0) + (m.nom||'').charAt(0)).toUpperCase())}</div>`;
+  document.getElementById('indivMemberPreview').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px">
+      ${photoHTML}
+      <div>
+        <div style="font-weight:bold;font-size:14px">${escapeHtml(getMemberFullName(m))}</div>
+        <div style="font-size:11px;color:var(--text-muted,#64748b)">Statut: ${escapeHtml(m.statut || 'Actif')}${m.groupeFeteId ? ' • Fête: ' + escapeHtml(m.groupeFeteId) : ''}</div>
+      </div>
+    </div>
+  `;
+  // Auto-remplit: username (depuis téléphone), telephone, email
+  const phone = m.telephone || '';
+  const email = m.adresseEmail || '';
+  const autoUsername = _ensureUniqueUsername(_sanitizeUsernameFromPhone(phone) || ('membre_' + (m.nom || '').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,8)));
+  createIndivForm.username = autoUsername;
+  createIndivForm.telephone = phone;
+  createIndivForm.adresseEmail = email;
+  document.getElementById('indivUsername').value = autoUsername;
+  document.getElementById('indivTelephone').value = phone;
+  document.getElementById('indivEmail').value = email;
+  // Le mot de passe reste celui généré à l'ouverture
+  document.getElementById('indivPassword').value = createIndivForm.password;
+}
+
+function regenerateIndivPassword(){
+  createIndivForm.password = _generateMemorablePassword();
+  const inp = document.getElementById('indivPassword');
+  if(inp) inp.value = createIndivForm.password;
+}
+
+function toggleIndivPasswordVisibility(){
+  const inp = document.getElementById('indivPassword');
+  if(!inp) return;
+  inp.type = (inp.type === 'password') ? 'text' : 'password';
+}
+
+function saveCreateIndivMemberAccount(){
+  if(!isAdmin()){ toast('Accès refusé', 'Action réservée aux administrateurs.', 'error'); return; }
+  const f = createIndivForm;
+  if(!f.membreId){
+    toast('Membre requis', 'Veuillez sélectionner un membre.', 'error'); return;
+  }
+  const m = getMemberById(f.membreId);
+  if(!m){
+    toast('Erreur', 'Membre introuvable.', 'error'); return;
+  }
+  // Validation username
+  if(!f.username || f.username.length < 3){
+    toast('Nom d\'utilisateur trop court', 'Au moins 3 caractères.', 'error'); return;
+  }
+  if(!/^[a-z0-9._-]+$/.test(f.username)){
+    toast('Format invalide', 'Lettres minuscules, chiffres, points, tirets et underscores uniquement.', 'error'); return;
+  }
+  if(state.users.some(u => u.username.toLowerCase() === f.username.toLowerCase())){
+    toast('Nom déjà pris', `Le nom "${f.username}" existe déjà.`, 'error'); return;
+  }
+  // Vérifie l'unicité du membreId
+  if(state.users.some(u => u.role === 'membre_indiv' && u.membreId === f.membreId)){
+    toast('Compte existant', 'Ce membre a déjà un compte individuel.', 'error'); return;
+  }
+  // Validation mot de passe
+  if(!f.password || f.password.length < 6){
+    toast('Mot de passe trop court', 'Au moins 6 caractères.', 'error'); return;
+  }
+  // Validation téléphone si fourni (format libre mais non vide si on l'utilise comme login)
+  // Validation email si fourni
+  if(f.adresseEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.adresseEmail)){
+    toast('Email invalide', 'Format d\'email incorrect.', 'error'); return;
+  }
+  // Vérifie l'unicité du téléphone et de l'email (parmi les membre_indiv)
+  if(f.telephone && state.users.some(u => u.role === 'membre_indiv' && u.telephone === f.telephone)){
+    toast('Téléphone déjà utilisé', `Le téléphone "${f.telephone}" appartient déjà à un autre compte individuel.`, 'error'); return;
+  }
+  if(f.adresseEmail && state.users.some(u => u.role === 'membre_indiv' && u.adresseEmail === f.adresseEmail)){
+    toast('Email déjà utilisé', `L'email "${f.adresseEmail}" appartient déjà à un autre compte individuel.`, 'error'); return;
+  }
+  // Crée le user
+  const newUser = {
+    id: uid('u'),
+    username: f.username,
+    password: f.password,
+    role: 'membre_indiv',
+    bureauRole: null,
+    membreId: f.membreId,
+    telephone: f.telephone || null,
+    adresseEmail: f.adresseEmail || null,
+    mustChangePassword: true,
+    createdAt: new Date().toISOString(),
+  };
+  state.users.push(newUser);
+  saveState();
+  // Log audit
+  if(typeof logAudit === 'function'){
+    logAudit('create', 'users', `Compte membre_indiv pour ${getMemberFullName(m)}`,
+      `Création du compte ${newUser.username} (rôle membre_indiv) lié au membre ${getMemberFullName(m)} (${m.id}). Téléphone: ${f.telephone || '—'}, Email: ${f.adresseEmail || '—'}.`,
+      null, { ...newUser, password: '***' });
+  }
+  closeModal();
+  toast('Compte créé', `Le compte individuel de ${getMemberFullName(m)} a été créé.\nIdentifiant: ${newUser.username}\nMot de passe: ${newUser.password}\nL'utilisateur devra changer le mot de passe à la première connexion.`, 'success', 8000);
+  navigateTo('settings');
+}
+
+// 📨 V6.28 : Édition d'un compte membre_indiv (mot de passe, téléphone, email, username)
+let editIndivForm = { id:'', username:'', password:'', telephone:'', adresseEmail:'', membreId:'' };
+
+function editIndivMemberAccount(userId){
+  if(!isAdmin()){ toast('Accès refusé', 'Seuls les administrateurs peuvent modifier un compte.', 'error'); return; }
+  const u = state.users.find(x => x.id === userId);
+  if(!u){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
+  if(u.role !== 'membre_indiv'){
+    toast('Action non applicable', 'Cette fonction est réservée aux comptes membre_indiv. Pour les autres comptes, utilisez la réinitialisation du mot de passe.', 'info');
+    return;
+  }
+  editIndivForm = {
+    id: u.id,
+    username: u.username,
+    password: '', // vide = ne pas changer
+    telephone: u.telephone || '',
+    adresseEmail: u.adresseEmail || '',
+    membreId: u.membreId || '',
+  };
+  const m = u.membreId ? getMemberById(u.membreId) : null;
+  const memberInfo = m ? getMemberFullName(m) : '—';
+  const photoHTML = m && m.photo
+    ? `<img src="${m.photo}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0" alt="">`
+    : m ? `<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0f5b45,#10b981);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold">${escapeHtml(((m.prenoms||'').charAt(0) + (m.nom||'').charAt(0)).toUpperCase())}</div>` : '';
+  const body = `
+    <div class="form-alert info">
+      <strong>✏️ Modification du compte</strong> — Lié au membre: <strong>${escapeHtml(memberInfo)}</strong>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      ${photoHTML}
+      <div>
+        <div style="font-weight:bold">${escapeHtml(memberInfo)}</div>
+        <div style="font-size:11px;color:var(--text-muted,#64748b)">Compte créé le ${new Date(u.createdAt || Date.now()).toLocaleDateString('fr-FR')}</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Nom d'utilisateur</label>
+      <input type="text" id="editIndivUsername" value="${escapeHtml(u.username)}" onchange="editIndivForm.username=this.value" autocomplete="off">
+      <p class="form-hint">L'utilisateur peut se connecter avec ce nom, son téléphone ou son email.</p>
+    </div>
+    <div class="form-group">
+      <label>Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+      <input type="text" id="editIndivPassword" placeholder="— inchangé —" onchange="editIndivForm.password=this.value" autocomplete="off">
+      <p class="form-hint">Au moins 6 caractères. L'utilisateur devra le changer à sa prochaine connexion.</p>
+    </div>
+    <div class="grid-2" style="gap:10px">
+      <div class="form-group" style="margin:0">
+        <label>Téléphone</label>
+        <input type="text" id="editIndivTelephone" value="${escapeHtml(u.telephone || '')}" onchange="editIndivForm.telephone=this.value" autocomplete="off">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Email</label>
+        <input type="email" id="editIndivEmail" value="${escapeHtml(u.adresseEmail || '')}" onchange="editIndivForm.adresseEmail=this.value" autocomplete="off">
+      </div>
+    </div>
+  `;
+  const footer = `
+    <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+    <button class="btn btn-danger" onclick="deleteIndivMemberAccount('${u.id}')" style="margin-right:auto">🗑 Supprimer</button>
+    <button class="btn btn-primary" onclick="saveEditIndivMemberAccount()">💾 Enregistrer</button>
+  `;
+  openModal('✏️ Modifier le compte individuel', body, footer, 'modal-md');
+}
+
+function saveEditIndivMemberAccount(){
+  if(!isAdmin()){ toast('Accès refusé', 'Action réservée aux administrateurs.', 'error'); return; }
+  const f = editIndivForm;
+  const u = state.users.find(x => x.id === f.id);
+  if(!u){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
+  if(!f.username || f.username.length < 3){
+    toast('Nom d\'utilisateur trop court', 'Au moins 3 caractères.', 'error'); return;
+  }
+  if(!/^[a-z0-9._-]+$/.test(f.username)){
+    toast('Format invalide', 'Lettres minuscules, chiffres, points, tirets et underscores uniquement.', 'error'); return;
+  }
+  if(state.users.some(x => x.id !== f.id && x.username.toLowerCase() === f.username.toLowerCase())){
+    toast('Nom déjà pris', `Le nom "${f.username}" existe déjà.`, 'error'); return;
+  }
+  if(f.password && f.password.length < 6){
+    toast('Mot de passe trop court', 'Au moins 6 caractères.', 'error'); return;
+  }
+  if(f.adresseEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.adresseEmail)){
+    toast('Email invalide', 'Format d\'email incorrect.', 'error'); return;
+  }
+  if(f.telephone && state.users.some(x => x.id !== f.id && x.role === 'membre_indiv' && x.telephone === f.telephone)){
+    toast('Téléphone déjà utilisé', `Le téléphone "${f.telephone}" appartient déjà à un autre compte.`, 'error'); return;
+  }
+  if(f.adresseEmail && state.users.some(x => x.id !== f.id && x.role === 'membre_indiv' && x.adresseEmail === f.adresseEmail)){
+    toast('Email déjà utilisé', `L'email "${f.adresseEmail}" appartient déjà à un autre compte.`, 'error'); return;
+  }
+  const before = { ...u, password: '***' };
+  // Applique les changements
+  u.username = f.username;
+  if(f.password){
+    u.password = f.password;
+    u.mustChangePassword = true;
+  }
+  u.telephone = f.telephone || null;
+  u.adresseEmail = f.adresseEmail || null;
+  saveState();
+  if(typeof logAudit === 'function'){
+    logAudit('update', 'users', `Compte membre_indiv ${u.username}`,
+      `Modification du compte ${u.username}. Username: ${f.username}, password: ${f.password ? 'changé' : 'inchangé'}, téléphone: ${f.telephone || '—'}, email: ${f.adresseEmail || '—'}.`,
+      before, { ...u, password: '***' });
+  }
+  closeModal();
+  toast('Compte modifié', `Le compte "${u.username}" a été mis à jour.`, 'success');
+  navigateTo('settings');
+}
+
+function deleteIndivMemberAccount(userId){
+  if(!isAdmin()){ toast('Accès refusé', 'Seuls les administrateurs peuvent supprimer un compte.', 'error'); return; }
+  const u = state.users.find(x => x.id === userId);
+  if(!u){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
+  if(u.role !== 'membre_indiv'){
+    toast('Action non applicable', 'Utilisez la suppression standard pour les autres comptes.', 'info');
+    return;
+  }
+  if(!confirm(`Supprimer le compte individuel "${u.username}" ?\n\nLe membre associé (${u.membreId ? getMemberById(u.membreId) ? getMemberFullName(getMemberById(u.membreId)) : 'inconnu' : 'aucun'}) restera dans la base membres mais ne pourra plus se connecter.\n\nCette action est irréversible.`)) return;
+  const before = { ...u, password: '***' };
+  state.users = state.users.filter(x => x.id !== userId);
+  saveState();
+  if(typeof logAudit === 'function'){
+    logAudit('delete', 'users', `Compte membre_indiv ${u.username}`,
+      `Suppression du compte ${u.username} (membre_indiv).`, before, null);
+  }
+  closeModal();
+  toast('Compte supprimé', `Le compte "${u.username}" a été supprimé.`, 'success');
+  navigateTo('settings');
+}
+
 
 /* ---------- LOGO ASSOCIATION ---------- */
 function handleLogoUpload(file){
