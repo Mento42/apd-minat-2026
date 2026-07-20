@@ -614,7 +614,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.28</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.29</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -678,7 +678,40 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.28',
+    'sidebar.version': 'APD-MINAT • Version 6.29',
+    'v628.indivTitle': '👤 Comptes membres individuels',
+    'v628.indivSubtitle': 'Créez un compte personnel pour chaque membre afin qu\'il puisse discuter en messagerie instantanée. Le membre se connectera avec son numéro de téléphone, son email ou son nom d\'utilisateur.',
+    'v628.createIndivBtn': '➕ Créer un compte membre',
+    'v628.indivListTitle': 'Comptes individuels existants',
+    'v628.noIndiv': 'Aucun compte membre individuel créé pour le moment.',
+    'v628.modalTitle': '➕ Créer un compte membre individuel',
+    'v628.modalIntro': 'Le membre pourra se connecter avec son <strong>numéro de téléphone</strong>, son <strong>email</strong> ou son <strong>nom d\'utilisateur</strong>, puis discuter en messagerie instantanée avec les autres membres.',
+    'v628.selectMember': 'Sélectionnez le membre',
+    'v628.selectMemberHint': 'La fiche membre fournit automatiquement la photo, le nom, le téléphone et l\'email.',
+    'v628.usernameField': 'Nom d\'utilisateur',
+    'v628.usernameHint': 'Minuscules, sans espaces ni accents. Unique dans l\'app. Pré-rempli depuis le téléphone si possible.',
+    'v628.passwordField': 'Mot de passe initial',
+    'v628.passwordHint': 'L\'utilisateur devra le changer à sa première connexion. Au moins 6 caractères.',
+    'v628.generatePwd': '🎲 Générer un mot de passe aléatoire',
+    'v628.phoneField': 'Téléphone (login alternatif)',
+    'v628.emailField': 'Email (login alternatif)',
+    'v628.summary': 'Récapitulatif',
+    'v628.loginInfo': 'Le membre pourra se connecter avec l\'un des 3 identifiants suivants :',
+    'v628.mustChangePwd': '⚠ Le membre devra changer ce mot de passe à sa première connexion.',
+    'v628.memberAlreadyLinked': '⚠ Ce membre a déjà un compte individuel : ',
+    'v628.successTitle': 'Compte créé',
+    'v628.successBody': 'Le compte individuel de "{name}" a été créé. Donnez-lui ses identifiants (numéro de téléphone + mot de passe temporaire) et invitez-le à se connecter.',
+    'v628.deleteConfirm': 'Supprimer le compte individuel de "{name}" ?\n\nLe membre ne pourra plus se connecter mais sa fiche membre restera intacte.',
+    'v628.resetConfirm': 'Réinitialiser le mot de passe de "{name}" ?\n\nUn nouveau mot de passe temporaire sera généré et affiché à l\'écran.',
+    'v628.newPwdTitle': 'Nouveau mot de passe temporaire',
+    'v628.resetPwdBody': 'Communiquez ce mot de passe à {name}. Il devra le changer à la prochaine connexion.',
+    'v628.sendSmsInfo': '💬 Pensez à communiquer ces identifiants au membre (SMS, WhatsApp, appel…).',
+    'v628.roleBadge': 'Membre indiv.',
+    'v628.editTitle': '✏️ Modifier le compte de {name}',
+    'v628.deleteBtn': '🗑 Supprimer',
+    'v628.resetBtn': '🔑 Réinitialiser le MDP',
+    'v628.editBtn': '✏️ Modifier',
+    'v628.copyBtn': '📋 Copier les identifiants',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -1035,7 +1068,40 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.28',
+    'sidebar.version': 'APD-MINAT • Version 6.29',
+    'v628.indivTitle': '👤 Individual member accounts',
+    'v628.indivSubtitle': 'Create a personal account for each member so they can chat in instant messaging. The member will log in with their phone number, email, or username.',
+    'v628.createIndivBtn': '➕ Create member account',
+    'v628.indivListTitle': 'Existing individual accounts',
+    'v628.noIndiv': 'No individual member account created yet.',
+    'v628.modalTitle': '➕ Create an individual member account',
+    'v628.modalIntro': 'The member will be able to log in with their <strong>phone number</strong>, <strong>email</strong>, or <strong>username</strong>, then chat in instant messaging with other members.',
+    'v628.selectMember': 'Select the member',
+    'v628.selectMemberHint': 'The member record automatically provides the photo, name, phone, and email.',
+    'v628.usernameField': 'Username',
+    'v628.usernameHint': 'Lowercase, no spaces or accents. Unique in the app. Pre-filled from phone if possible.',
+    'v628.passwordField': 'Initial password',
+    'v628.passwordHint': 'The user will have to change it at first login. At least 6 characters.',
+    'v628.generatePwd': '🎲 Generate a random password',
+    'v628.phoneField': 'Phone (alternative login)',
+    'v628.emailField': 'Email (alternative login)',
+    'v628.summary': 'Summary',
+    'v628.loginInfo': 'The member will be able to log in with one of the following 3 identifiers:',
+    'v628.mustChangePwd': '⚠ The member will have to change this password at first login.',
+    'v628.memberAlreadyLinked': '⚠ This member already has an individual account: ',
+    'v628.successTitle': 'Account created',
+    'v628.successBody': 'The individual account for "{name}" has been created. Give them their credentials (phone number + temporary password) and invite them to log in.',
+    'v628.deleteConfirm': 'Delete the individual account of "{name}"?\n\nThe member will no longer be able to log in but their member record will remain intact.',
+    'v628.resetConfirm': 'Reset the password of "{name}"?\n\nA new temporary password will be generated and displayed on screen.',
+    'v628.newPwdTitle': 'New temporary password',
+    'v628.resetPwdBody': 'Communicate this password to {name}. They will have to change it at next login.',
+    'v628.sendSmsInfo': '💬 Remember to communicate these credentials to the member (SMS, WhatsApp, call…).',
+    'v628.roleBadge': 'Indiv. member',
+    'v628.editTitle': '✏️ Edit account of {name}',
+    'v628.deleteBtn': '🗑 Delete',
+    'v628.resetBtn': '🔑 Reset password',
+    'v628.editBtn': '✏️ Edit',
+    'v628.copyBtn': '📋 Copy credentials',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -4142,14 +4208,6 @@ function getCurrentUserRoleLabel(){
     return state.currentUser.bureauRole || 'Administrateur';
   }
   if(state.currentUser.role === 'membre') return 'Membre';
-  // 📨 V6.28 : compte membre_indiv — affiche le vrai nom du membre lié
-  if(state.currentUser.role === 'membre_indiv'){
-    if(state.currentUser.membreId){
-      const m = (typeof getMemberById === 'function') ? getMemberById(state.currentUser.membreId) : null;
-      if(m) return 'Membre — ' + getMemberFullName(m);
-    }
-    return 'Membre individuel';
-  }
   return state.currentUser.role;
 }
 // Admin technique = admin sans bureauRole (le compte 'admin' par défaut).
@@ -10560,17 +10618,64 @@ async function pushToCloud(force){
     _syncInProgress = false;
   }
 }
+// 📨 V6.29 : Fusionne les comptes membre_indiv du cloud dans state.users local.
+// - Préserve TOUS les comptes admin/membre partagés (locaux).
+// - Remplace les membre_indiv locaux par ceux du cloud (source de vérité).
+// - Si l'utilisateur courant est un membre_indiv, met à jour state.currentUser avec la version cloud.
+// - Si un compte indiv local n'existe plus dans le cloud (supprimé par l'admin depuis un autre
+//   navigateur), il est retiré localement.
+// Retourne le nombre de comptes indiv après fusion (pour affichage éventuel).
+function mergeIndivUsersFromCloud(cloudUsersIndiv){
+  if(!Array.isArray(cloudUsersIndiv)) cloudUsersIndiv = [];
+  if(!Array.isArray(state.users)) state.users = [];
+  // 1) Sépare les comptes locaux : admin + membre partagé (à garder tels quels)
+  const localNonIndiv = state.users.filter(u => u.role !== 'membre_indiv');
+  // 2) Construit la nouvelle liste : locaux non-indiv + membre_indiv du cloud
+  const beforeCount = state.users.filter(u => u.role === 'membre_indiv').length;
+  state.users = localNonIndiv.concat(cloudUsersIndiv.map(u => ({ ...u })));
+  const afterCount = state.users.filter(u => u.role === 'membre_indiv').length;
+  // 3) Si l'utilisateur courant est un membre_indiv, on met à jour sa session
+  if(state.currentUser && state.currentUser.role === 'membre_indiv'){
+    const updated = state.users.find(u => u.id === state.currentUser.id || u.username === state.currentUser.username);
+    if(updated){
+      // Conserve mustChangePassword local si l'utilisateur est en train de changer son MDP
+      // (sinon on prend la version cloud qui peut être plus récente).
+      const localMustChange = state.currentUser.mustChangePassword;
+      state.currentUser = { ...updated, mustChangePassword: localMustChange };
+    } else {
+      // L'utilisateur courant a été supprimé du cloud → déconnexion forcée
+      console.warn('V6.29: compte courant supprimé du cloud — déconnexion forcée');
+      if(typeof logout === 'function'){
+        setTimeout(() => logout(), 100);
+      } else {
+        state.currentUser = null;
+      }
+    }
+  }
+  console.log('V6.29: fusion usersIndiv — avant=' + beforeCount + ', après=' + afterCount);
+  return afterCount;
+}
+
 // Construit le payload à pousser dans le cloud.
-// Exclut : sync (méta de synchro), currentUser (session locale), activeModule, users (mots de passe).
+// Exclut: sync (méta de synchro), currentUser (session locale), activeModule, users (mots de passe admin/membre partagé).
 // Ces champs sont locaux à chaque instance et ne doivent pas être synchronisés.
+//
+// 📨 V6.29 : EXCEPTION — les comptes membre_indiv (créés par l'admin via V6.28) DOIVENT
+// être synchronisés pour que les membres puissent se connecter depuis n'importe quel
+// navigateur. On les extrait dans un champ séparé `usersIndiv` (avec leur mot de passe),
+// SANS toucher aux comptes admin/membre qui restent strictement locaux.
 function buildCloudPayload(){
   const clone = JSON.parse(JSON.stringify(state));
   delete clone.sync;
   delete clone.currentUser;
   delete clone.activeModule;
   // Les users ne sont pas synchronisés pour éviter d'écraser les mots de passe locaux
-  // (chaque instance gère ses propres comptes).
+  // (chaque instance gère ses propres comptes admin/membre).
   delete clone.users;
+  // 📨 V6.29 : EXCEPTION — on synchronise les comptes membre_indiv via un champ dédié.
+  // Ils seront fusionnés dans state.users localement lors du pull, sans toucher aux
+  // comptes admin/membre partagés qui restent locaux.
+  clone.usersIndiv = (Array.isArray(state.users) ? state.users.filter(u => u.role === 'membre_indiv') : []);
   // Le journal d'audit est local à chaque instance (Task 46) — ne pas synchroniser.
   delete clone.auditLog;
   delete clone.activeSessions;
@@ -10649,6 +10754,11 @@ async function pullFromCloud(force){
       activeSessions: state.activeSessions, // Sessions actives locales (Task 46)
     };
     state = Object.assign({}, cloud.data, preserved);
+    // 📨 V6.29 : fusionne les comptes membre_indiv du cloud dans state.users local
+    // (préserve les comptes admin/membre partagés qui restent locaux).
+    if(Array.isArray(cloud.data.usersIndiv)){
+      mergeIndivUsersFromCloud(cloud.data.usersIndiv);
+    }
     // Met à jour les méta sync
     state.sync.lastSyncAt = Date.now();
     state.sync.lastPushedBy = cloud.updated_by || null;
@@ -10832,6 +10942,10 @@ async function silentPullFromCloud(){
         // 📨 V6.22 : les messages fusionnés sont déjà dans cloud.data.messages
       };
       state = Object.assign({}, cloud.data, preserved);
+      // 📨 V6.29 : fusionne les comptes membre_indiv du cloud dans state.users local
+      if(Array.isArray(cloud.data.usersIndiv)){
+        mergeIndivUsersFromCloud(cloud.data.usersIndiv);
+      }
       // Met à jour les méta sync
       state.sync.lastSyncAt = Date.now();
       state.sync.lastPushedBy = cloud.updated_by || null;
@@ -12494,19 +12608,9 @@ MODULES.settings = function(){
       ${isAdmin() ? `
       <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
       <h4 style="margin:0 0 6px 0;font-size:14px">👥 Gestion des utilisateurs</h4>
-      <p class="text-sm mb-3">Gérez les comptes utilisateurs de l'application. Trois types de comptes:</p>
-      <ul class="text-sm" style="margin:0 0 12px 18px;padding:0">
-        <li><strong>Administrateurs</strong> — accès complet (édition, paramètres, audit).</li>
-        <li><strong>Membre commun</strong> — accès lecture seule partagé (un seul compte pour tous les membres non-admin).</li>
-        <li><strong>Membre individuel</strong> (V6.28) — compte personnel lié à une fiche membre, permet la <strong>messagerie instantanée</strong> entre membres avec photo de profil, accusés de lecture et indicateur de frappe.</li>
-      </ul>
+      <p class="text-sm mb-3">Créez des comptes pour les membres de l'Amicale. Les <strong>membres</strong> ont un accès <strong>lecture seule</strong> (ils peuvent consulter leurs données mais pas modifier). Les <strong>administrateurs</strong> ont un accès complet.</p>
       <div class="form-alert info mb-3">
         <strong>📊 ${state.users.length} compte(s) enregistré(s)</strong>
-        <span class="text-sm" style="margin-left:8px">
-          (${state.users.filter(u => u.role === 'admin').length} admin,
-          ${state.users.filter(u => u.role === 'membre').length} membre commun,
-          ${state.users.filter(u => u.role === 'membre_indiv').length} membre individuel)
-        </span>
         ${state.users.filter(u => u.mustChangePassword).length > 0 ? `<br><span style="color:var(--warning)"><strong>⚠ ${state.users.filter(u => u.mustChangePassword).length} compte(s) avec mot de passe à changer.</strong></span>` : ''}
       </div>
       <div style="overflow-x:auto">
@@ -12524,24 +12628,17 @@ MODULES.settings = function(){
             ${state.users.map(u => `
               <tr>
                 <td style="padding:8px;border-bottom:1px solid var(--border)">
-                  <div style="display:flex;align-items:center;gap:8px">
-                    ${u.role === 'membre_indiv' ? renderUserAvatarHTML(u.username, 32) : ''}
-                    <div>
-                      <strong>${escapeHtml(u.username)}</strong>
-                      ${u.id === state.currentUser?.id ? '<span class="badge badge-blue" style="margin-left:4px;font-size:9px;padding:1px 6px">vous</span>' : ''}
-                      ${u.role === 'membre_indiv' && u.membreId ? (() => { const m = getMemberById(u.membreId); return m ? '<div style="font-size:11px;color:var(--text-muted,#64748b)">↳ ' + escapeHtml(getMemberFullName(m)) + '</div>' : ''; })() : ''}
-                    </div>
-                  </div>
+                  <strong>${escapeHtml(u.username)}</strong>
+                  ${u.id === state.currentUser?.id ? '<span class="badge badge-blue" style="margin-left:4px;font-size:9px;padding:1px 6px">vous</span>' : ''}
                 </td>
                 <td style="padding:8px;border-bottom:1px solid var(--border)">
-                  <span class="badge ${u.role === 'admin' ? 'badge-emerald' : (u.role === 'membre_indiv' ? 'badge-blue' : 'badge-gray')}" style="font-size:10px;padding:2px 8px">${u.role === 'admin' ? 'Admin' : (u.role === 'membre_indiv' ? 'Membre indiv.' : 'Membre')}</span>
+                  <span class="badge ${u.role === 'admin' ? 'badge-emerald' : 'badge-gray'}" style="font-size:10px;padding:2px 8px">${u.role === 'admin' ? 'Admin' : 'Membre'}</span>
                 </td>
                 <td style="padding:8px;border-bottom:1px solid var(--border)">${u.bureauRole ? escapeHtml(u.bureauRole) : '<span class="text-muted">—</span>'}</td>
                 <td style="padding:8px;border-bottom:1px solid var(--border)">
                   ${u.mustChangePassword ? '<span style="color:var(--warning);font-size:11px">⚠ À changer</span>' : '<span style="color:var(--success,#10b981);font-size:11px">✓ OK</span>'}
                 </td>
                 <td style="padding:8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">
-                  ${u.role === 'membre_indiv' ? `<button class="btn btn-secondary btn-sm" onclick="editIndivMemberAccount('${u.id}')" title="Modifier le compte">✏️</button>` : ''}
                   <button class="btn btn-secondary btn-sm" onclick="resetUserPassword('${u.id}')" title="Réinitialiser le mot de passe">🔑</button>
                   ${u.username !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')" title="Supprimer">🗑</button>` : ''}
                 </td>
@@ -12550,10 +12647,60 @@ MODULES.settings = function(){
           </tbody>
         </table>
       </div>
-      <div class="flex gap-2 flex-wrap mt-3">
-        <button class="btn btn-primary" onclick="openCreateUserDialog()">➕ Créer un compte (membre/admin)</button>
-        <button class="btn btn-primary" style="background:linear-gradient(135deg,#0f5b45,#10b981);border-color:#10b981" onclick="openCreateIndivMemberAccountDialog()">👤 Créer un compte membre individuel</button>
+      <hr style="margin:20px 0;border:none;border-top:2px dashed var(--border)">
+      <h4 style="margin:0 0 6px 0;font-size:14px">${t('v628.indivTitle')}</h4>
+      <p class="text-sm mb-3">${t('v628.indivSubtitle')}</p>
+
+      <div class="form-alert info mb-3" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #10b981">
+        <strong>💬 Messagerie instantanée</strong><br>
+        <span class="text-sm">Chaque membre disposant d\'un compte individuel peut échanger en temps réel avec les autres membres connectés (indicateur de frappe, accusés de lecture, photos de profil).</span>
       </div>
+
+      <div style="margin-bottom:12px">
+        <button class="btn btn-primary" onclick="openCreateIndividualMemberDialog()" style="background:#10b981;border-color:#10b981">
+          ${t('v628.createIndivBtn')}
+        </button>
+      </div>
+
+      <h5 style="margin:14px 0 6px 0;font-size:13px;color:var(--text-muted)">${t('v628.indivListTitle')}</h5>
+      ${(function(){
+        const indivUsers = (state.users||[]).filter(u => u.role === 'membre_indiv');
+        if(indivUsers.length === 0){
+          return '<div class="form-alert" style="background:#f8fafc;border:1px dashed var(--border);padding:14px;color:var(--text-muted);text-align:center"><span class="text-sm">' + escapeHtml(t('v628.noIndiv')) + '</span></div>';
+        }
+        let rows = indivUsers.map(u => {
+          const m = u.membreId ? (typeof getMemberById === 'function' ? getMemberById(u.membreId) : null) : null;
+          const fullName = m ? getMemberFullName(m) : u.username;
+          const photoHtml = (m && m.photo)
+            ? '<img src="' + m.photo + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" alt="">'
+            : '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0f5b45,#10b981);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold">' + escapeHtml(((u.username||'??').substring(0,2)).toUpperCase()) + '</div>';
+          const loginLabel = u.telephone ? escapeHtml(u.telephone) : (u.adresseEmail ? escapeHtml(u.adresseEmail) : escapeHtml(u.username));
+          const statusBadge = u.mustChangePassword
+            ? '<span style="color:var(--warning);font-size:11px">⚠ MDP à changer</span>'
+            : '<span style="color:var(--success,#10b981);font-size:11px">✓ Actif</span>';
+          return '<tr>' +
+            '<td style="padding:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">' + photoHtml + '<div><strong>' + escapeHtml(fullName) + '</strong><br><span class="text-muted" style="font-size:11px">@' + escapeHtml(u.username) + '</span></div></td>' +
+            '<td style="padding:8px;border-bottom:1px solid var(--border)">' + loginLabel + '</td>' +
+            '<td style="padding:8px;border-bottom:1px solid var(--border)">' + statusBadge + '</td>' +
+            '<td style="padding:8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">' +
+              '<button class="btn btn-secondary btn-sm" onclick="copyIndividualCredentials(\''+u.id+'\')" title="Copier les identifiants" style="margin-right:4px">📋</button>' +
+              '<button class="btn btn-secondary btn-sm" onclick="resetIndividualPassword(\''+u.id+'\')" title="Réinitialiser le mot de passe" style="margin-right:4px">🔑</button>' +
+              '<button class="btn btn-danger btn-sm" onclick="deleteIndividualMember(\''+u.id+'\')" title="Supprimer">🗑</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+        return '<div style="overflow-x:auto"><table class="table text-sm" style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--bg-card,#f8fafc)">' +
+               '<th style="padding:8px;text-align:left;border-bottom:2px solid var(--border)">Membre</th>' +
+               '<th style="padding:8px;text-align:left;border-bottom:2px solid var(--border)">Téléphone / Email</th>' +
+               '<th style="padding:8px;text-align:left;border-bottom:2px solid var(--border)">Statut</th>' +
+               '<th style="padding:8px;text-align:right;border-bottom:2px solid var(--border)">Actions</th>' +
+               '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      })()}
+
+      <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
+      <h4 style="margin:0 0 6px 0;font-size:14px">🔑 Comptes administrateurs / membre partagé</h4>
+      <p class="text-sm mb-3">Créez des comptes pour les administrateurs (accès complet) ou utilisez le compte <code>membre</code> partagé (lecture seule).</p>
+      <button class="btn btn-primary mt-3" onclick="openCreateUserDialog()">➕ Créer un compte admin</button>
       ` : `
       <hr style="margin:20px 0;border:none;border-top:1px solid var(--border)">
       <div class="form-alert info">
@@ -12787,199 +12934,186 @@ function saveCreateUser(){
 }
 
 
-/* ---------- 📨 V6.28 : COMPTES MEMBRE_INDIV (UI) ---------- */
-// Crée un compte individuel pour un membre de l'Amicale.
-// - Sélectionne un membre dans state.members
-// - Auto-remplit: username (à partir du téléphone), telephone, adresseEmail, membreId
-// - Génère un mot de passe aléatoire mémorisable (modifiable)
-// - Le compte peut se connecter avec username, téléphone OU email
-let createIndivForm = { membreId:'', username:'', password:'', telephone:'', adresseEmail:'' };
+/* ---------- V6.28 : COMPTES MEMBRES INDIVIDUELS ---------- */
+// État du formulaire de création de compte membre individuel.
+let createIndivForm = {
+  membreId: '',
+  username: '',
+  password: '',
+  telephone: '',
+  adresseEmail: '',
+};
 
-function _generateMemorablePassword(){
-  // Génère un mot de passe aléatoire lisible: 2 mots courts + chiffres
-  const words = ['soleil','lune','etoile','rue','mer','jour','nuit','or','fer','feu','eau','vent','lion','paix','joie','force','honneur','frere','soeur','papa','mama','amicale','union','fete'];
-  const w1 = words[Math.floor(Math.random()*words.length)];
-  const w2 = words[Math.floor(Math.random()*words.length)];
-  const num = Math.floor(100 + Math.random()*900);
-  return w1 + w2 + num;
+// Génère un mot de passe aléatoire humainement mémorisable (2 mots + chiffres).
+function generateRandomPassword(){
+  const adjectives = ['vert','bleu','rouge','doré','sage','calme','fier','vif','doux','clair','beau','grand','fort','fier','sage','vrai'];
+  const nouns = ['lion','tigre','aigle','paon','chene','cedre','palme','etoile','soleil','lune','mer','ciel','feu','terre','or','argent'];
+  const a = adjectives[Math.floor(Math.random()*adjectives.length)];
+  const n = nouns[Math.floor(Math.random()*nouns.length)];
+  const digits = Math.floor(100 + Math.random()*900); // 100-999
+  return a + n + digits; // ex: vertlion257 — facile à dicter au téléphone
 }
 
-function _sanitizeUsernameFromPhone(phone){
-  // Convertit "+237 6 99 88 77 66" → "237699887766"
+// Vérifie si un membre a déjà un compte membre_indiv lié.
+function memberHasIndividualAccount(memberId){
+  if(!memberId) return null;
+  return (state.users||[]).find(u => u.role === 'membre_indiv' && u.membreId === memberId) || null;
+}
+
+// Construit un username à partir du téléphone (ex: "+237 699 12 34 56" → "237699123456")
+function deriveUsernameFromPhone(phone){
   if(!phone) return '';
-  return phone.replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
+  return phone.replace(/[^0-9a-z]/gi, '').toLowerCase();
 }
 
-function _ensureUniqueUsername(base){
-  if(!base) base = 'membre' + Math.floor(Math.random()*10000);
-  let candidate = base;
-  let i = 1;
-  while(state.users.some(u => u.username.toLowerCase() === candidate.toLowerCase())){
-    candidate = base + i;
-    i++;
-    if(i > 999) { candidate = base + '_' + Date.now().toString(36); break; }
-  }
-  return candidate;
-}
-
-function openCreateIndivMemberAccountDialog(){
+// Ouvre le dialogue de création d'un compte membre individuel (admin only).
+function openCreateIndividualMemberDialog(){
   if(!isAdmin()){ toast('Accès refusé', 'Seuls les administrateurs peuvent créer des comptes.', 'error'); return; }
-  // Liste des membres qui n'ont PAS déjà un compte membre_indiv
-  const membersWithIndivAccount = new Set(
-    state.users.filter(u => u.role === 'membre_indiv' && u.membreId).map(u => u.membreId)
-  );
-  const availableMembers = sortMembersAlpha(state.members).filter(m => !membersWithIndivAccount.has(m.id));
-  if(availableMembers.length === 0){
-    toast('Aucun membre disponible', 'Tous les membres ont déjà un compte individuel.', 'info');
-    return;
-  }
-  createIndivForm = { membreId:'', username:'', password: _generateMemorablePassword(), telephone:'', adresseEmail:'' };
+  createIndivForm = { membreId:'', username:'', password:'', telephone:'', adresseEmail:'' };
+
+  const members = sortMembersAlpha(state.members || []);
+  // Pré-suggère un mot de passe aléatoire
+  const suggestedPwd = generateRandomPassword();
 
   const body = `
-    <div class="form-alert info">
-      <strong>👤 Compte membre individuel</strong> — Ce compte sera lié à la fiche d'un membre.
-      L'utilisateur pourra se connecter avec son <strong>nom d'utilisateur</strong>, son <strong>téléphone</strong> ou son <strong>email</strong>.
-      Il accédera à la <strong>messagerie instantanée</strong> et à ses données personnelles.
+    <div class="form-alert info" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #10b981">
+      <strong>👤 Nouveau compte membre individuel</strong><br>
+      <span class="text-sm">${t('v628.modalIntro')}</span>
     </div>
+
     <div class="form-group">
-      <label>📋 Sélectionner le membre</label>
+      <label>${t('v628.selectMember')} <span style="color:var(--danger)">*</span></label>
       <select id="indivMemberSelect" onchange="onIndivMemberSelected(this.value)">
         <option value="">— Sélectionnez un membre —</option>
-        ${availableMembers.map(m => `<option value="${m.id}">${escapeHtml(getMemberFullName(m))}${m.telephone ? ' (' + escapeHtml(m.telephone) + ')' : ''}</option>`).join('')}
+        ${members.map(m => {
+          const alreadyLinked = memberHasIndividualAccount(m.id);
+          const displayName = escapeHtml(getMemberFullName(m)) + (m.telephone ? ' (' + escapeHtml(m.telephone) + ')' : '');
+          return '<option value="' + m.id + '"' + (alreadyLinked ? ' disabled' : '') + '>' + displayName + (alreadyLinked ? ' [déjà lié]' : '') + '</option>';
+        }).join('')}
       </select>
-      <p class="form-hint">Seuls les membres sans compte individuel existant sont listés.</p>
+      <p class="form-hint">${t('v628.selectMemberHint')}</p>
     </div>
-    <div id="indivFormFields" style="display:none">
-      <div class="form-group">
-        <label>👤 Aperçu du membre</label>
-        <div id="indivMemberPreview" style="padding:10px;background:var(--bg-card,#f8fafc);border-radius:8px;border:1px solid var(--border)"></div>
-      </div>
-      <div class="form-group">
-        <label>Nom d'utilisateur</label>
-        <input type="text" id="indivUsername" placeholder="auto-généré depuis le téléphone" onchange="createIndivForm.username=this.value" autocomplete="off">
-        <p class="form-hint">L'utilisateur pourra se connecter avec ce nom, son téléphone ou son email.modifiable.</p>
-      </div>
-      <div class="form-group">
-        <label>Mot de passe initial</label>
-        <div style="display:flex;gap:6px">
-          <input type="text" id="indivPassword" placeholder="Mot de passe" onchange="createIndivForm.password=this.value" autocomplete="off" style="flex:1">
-          <button class="btn btn-secondary" type="button" onclick="regenerateIndivPassword()" title="Générer un nouveau">🔄</button>
-          <button class="btn btn-secondary" type="button" onclick="toggleIndivPasswordVisibility()" title="Afficher / masquer">👁</button>
-        </div>
-        <p class="form-hint">L'utilisateur devra le changer à sa première connexion. Au moins 6 caractères.</p>
-      </div>
+
+    <div id="indivFieldsContainer" style="display:none">
       <div class="grid-2" style="gap:10px">
         <div class="form-group" style="margin:0">
-          <label>Téléphone</label>
-          <input type="text" id="indivTelephone" placeholder="ex: +237 699887766" onchange="createIndivForm.telephone=this.value" autocomplete="off">
+          <label>${t('v628.usernameField')}</label>
+          <input type="text" id="indivUsername" placeholder="ex: 237699123456" oninput="createIndivForm.username=this.value" autocomplete="off">
+          <p class="form-hint">${t('v628.usernameHint')}</p>
         </div>
         <div class="form-group" style="margin:0">
-          <label>Email</label>
-          <input type="email" id="indivEmail" placeholder="ex: jean.dupont@email.com" onchange="createIndivForm.adresseEmail=this.value" autocomplete="off">
+          <label>${t('v628.passwordField')}</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="indivPassword" placeholder="${suggestedPwd}" oninput="createIndivForm.password=this.value" autocomplete="off" style="flex:1">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('indivPassword').value=generateRandomPassword();createIndivForm.password=document.getElementById('indivPassword').value" title="Générer un mot de passe aléatoire">🎲</button>
+          </div>
+          <p class="form-hint">${t('v628.passwordHint')}</p>
         </div>
       </div>
+
+      <div class="grid-2" style="gap:10px;margin-top:10px">
+        <div class="form-group" style="margin:0">
+          <label>${t('v628.phoneField')}</label>
+          <input type="text" id="indivPhone" placeholder="ex: +237 699 12 34 56" oninput="createIndivForm.telephone=this.value" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>${t('v628.emailField')}</label>
+          <input type="email" id="indivEmail" placeholder="ex: prenom.nom@email.com" oninput="createIndivForm.adresseEmail=this.value" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="form-alert" style="margin-top:14px;background:#fef9c3;border:1px solid #eab308;padding:10px 12px;border-radius:6px">
+        <strong>${t('v628.summary')}</strong><br>
+        <span class="text-sm">${t('v628.loginInfo')}</span>
+        <ul style="margin:6px 0 0 18px;font-size:12px">
+          <li>📞 Téléphone : <strong id="sumPhone">—</strong></li>
+          <li>📧 Email : <strong id="sumEmail">—</strong></li>
+          <li>👤 Nom d\'utilisateur : <strong id="sumUsername">—</strong></li>
+        </ul>
+        <span class="text-sm" style="display:block;margin-top:6px;color:#92400e">${t('v628.mustChangePwd')}</span>
+      </div>
+
+      <div id="indivAlreadyLinkedAlert" style="display:none;margin-top:10px" class="form-alert warning"></div>
     </div>
   `;
+
   const footer = `
     <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-    <button class="btn btn-primary" style="background:linear-gradient(135deg,#0f5b45,#10b981);border-color:#10b981" onclick="saveCreateIndivMemberAccount()">👤 Créer le compte</button>
+    <button class="btn btn-primary" onclick="saveCreateIndividualMember()" style="background:#10b981;border-color:#10b981">✅ Créer le compte</button>
   `;
-  openModal('👤 Créer un compte membre individuel', body, footer, 'modal-md');
+  openModal(t('v628.modalTitle'), body, footer, 'modal-md');
 }
 
-function onIndivMemberSelected(membreId){
-  createIndivForm.membreId = membreId;
-  const fieldsDiv = document.getElementById('indivFormFields');
-  if(!membreId){
-    fieldsDiv.style.display = 'none';
+// Callback lorsqu'un membre est sélectionné dans le dropdown.
+function onIndivMemberSelected(memberId){
+  if(!memberId){
+    document.getElementById('indivFieldsContainer').style.display = 'none';
+    createIndivForm.membreId = '';
     return;
   }
-  const m = getMemberById(membreId);
+  const m = getMemberById(memberId);
   if(!m){
-    fieldsDiv.style.display = 'none';
+    document.getElementById('indivFieldsContainer').style.display = 'none';
     return;
   }
-  fieldsDiv.style.display = 'block';
-  // Aperçu du membre (photo + nom + statut)
-  const photoHTML = m.photo
-    ? `<img src="${m.photo}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0" alt="">`
-    : `<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0f5b45,#10b981);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold">${escapeHtml(((m.prenoms||'').charAt(0) + (m.nom||'').charAt(0)).toUpperCase())}</div>`;
-  document.getElementById('indivMemberPreview').innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px">
-      ${photoHTML}
-      <div>
-        <div style="font-weight:bold;font-size:14px">${escapeHtml(getMemberFullName(m))}</div>
-        <div style="font-size:11px;color:var(--text-muted,#64748b)">Statut: ${escapeHtml(m.statut || 'Actif')}${m.groupeFeteId ? ' • Fête: ' + escapeHtml(m.groupeFeteId) : ''}</div>
-      </div>
-    </div>
-  `;
-  // Auto-remplit: username (depuis téléphone), telephone, email
+  // Vérifie si le membre a déjà un compte
+  const existing = memberHasIndividualAccount(memberId);
+  const alertEl = document.getElementById('indivAlreadyLinkedAlert');
+  if(existing){
+    alertEl.style.display = 'block';
+    alertEl.innerHTML = '<strong>' + escapeHtml(t('v628.memberAlreadyLinked')) + escapeHtml(existing.username) + '</strong>';
+  } else {
+    alertEl.style.display = 'none';
+  }
+  // Pré-remplit les champs depuis la fiche membre
   const phone = m.telephone || '';
   const email = m.adresseEmail || '';
-  const autoUsername = _ensureUniqueUsername(_sanitizeUsernameFromPhone(phone) || ('membre_' + (m.nom || '').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,8)));
-  createIndivForm.username = autoUsername;
-  createIndivForm.telephone = phone;
-  createIndivForm.adresseEmail = email;
-  document.getElementById('indivUsername').value = autoUsername;
-  document.getElementById('indivTelephone').value = phone;
+  const username = deriveUsernameFromPhone(phone) || (m.nom + m.prenoms.charAt(0)).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const pwd = generateRandomPassword();
+  createIndivForm = {
+    membreId: memberId,
+    username: username,
+    password: pwd,
+    telephone: phone,
+    adresseEmail: email,
+  };
+  document.getElementById('indivFieldsContainer').style.display = 'block';
+  document.getElementById('indivUsername').value = username;
+  document.getElementById('indivPassword').value = pwd;
+  document.getElementById('indivPhone').value = phone;
   document.getElementById('indivEmail').value = email;
-  // Le mot de passe reste celui généré à l'ouverture
-  document.getElementById('indivPassword').value = createIndivForm.password;
+  // Met à jour le récapitulatif
+  document.getElementById('sumPhone').textContent = phone || '—';
+  document.getElementById('sumEmail').textContent = email || '—';
+  document.getElementById('sumUsername').textContent = username || '—';
 }
 
-function regenerateIndivPassword(){
-  createIndivForm.password = _generateMemorablePassword();
-  const inp = document.getElementById('indivPassword');
-  if(inp) inp.value = createIndivForm.password;
-}
-
-function toggleIndivPasswordVisibility(){
-  const inp = document.getElementById('indivPassword');
-  if(!inp) return;
-  inp.type = (inp.type === 'password') ? 'text' : 'password';
-}
-
-function saveCreateIndivMemberAccount(){
+// Sauvegarde le compte membre_indiv.
+function saveCreateIndividualMember(){
   if(!isAdmin()){ toast('Accès refusé', 'Action réservée aux administrateurs.', 'error'); return; }
   const f = createIndivForm;
-  if(!f.membreId){
-    toast('Membre requis', 'Veuillez sélectionner un membre.', 'error'); return;
-  }
+  if(!f.membreId){ toast('Membre requis', 'Veuillez sélectionner un membre dans la liste.', 'error'); return; }
   const m = getMemberById(f.membreId);
-  if(!m){
-    toast('Erreur', 'Membre introuvable.', 'error'); return;
+  if(!m){ toast('Erreur', 'Membre introuvable.', 'error'); return; }
+  // Vérifie doublon
+  if(memberHasIndividualAccount(f.membreId)){
+    toast('Compte existant', 'Ce membre a déjà un compte individuel.', 'error'); return;
   }
   // Validation username
   if(!f.username || f.username.length < 3){
-    toast('Nom d\'utilisateur trop court', 'Au moins 3 caractères.', 'error'); return;
+    toast('Nom d\'utilisateur trop court', 'Au moins 3 caractères, minuscules, sans espaces.', 'error'); return;
   }
   if(!/^[a-z0-9._-]+$/.test(f.username)){
     toast('Format invalide', 'Lettres minuscules, chiffres, points, tirets et underscores uniquement.', 'error'); return;
   }
   if(state.users.some(u => u.username.toLowerCase() === f.username.toLowerCase())){
-    toast('Nom déjà pris', `Le nom "${f.username}" existe déjà.`, 'error'); return;
+    toast('Nom déjà pris', 'Le nom "' + f.username + '" existe déjà. Choisissez-en un autre.', 'error'); return;
   }
-  // Vérifie l'unicité du membreId
-  if(state.users.some(u => u.role === 'membre_indiv' && u.membreId === f.membreId)){
-    toast('Compte existant', 'Ce membre a déjà un compte individuel.', 'error'); return;
-  }
-  // Validation mot de passe
+  // Validation password
   if(!f.password || f.password.length < 6){
-    toast('Mot de passe trop court', 'Au moins 6 caractères.', 'error'); return;
+    toast('Mot de passe trop court', 'Le mot de passe initial doit faire au moins 6 caractères.', 'error'); return;
   }
-  // Validation téléphone si fourni (format libre mais non vide si on l'utilise comme login)
-  // Validation email si fourni
-  if(f.adresseEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.adresseEmail)){
-    toast('Email invalide', 'Format d\'email incorrect.', 'error'); return;
-  }
-  // Vérifie l'unicité du téléphone et de l'email (parmi les membre_indiv)
-  if(f.telephone && state.users.some(u => u.role === 'membre_indiv' && u.telephone === f.telephone)){
-    toast('Téléphone déjà utilisé', `Le téléphone "${f.telephone}" appartient déjà à un autre compte individuel.`, 'error'); return;
-  }
-  if(f.adresseEmail && state.users.some(u => u.role === 'membre_indiv' && u.adresseEmail === f.adresseEmail)){
-    toast('Email déjà utilisé', `L'email "${f.adresseEmail}" appartient déjà à un autre compte individuel.`, 'error'); return;
-  }
-  // Crée le user
+  // Crée le compte
   const newUser = {
     id: uid('u'),
     username: f.username,
@@ -12996,144 +13130,107 @@ function saveCreateIndivMemberAccount(){
   saveState();
   // Log audit
   if(typeof logAudit === 'function'){
-    logAudit('create', 'users', `Compte membre_indiv pour ${getMemberFullName(m)}`,
-      `Création du compte ${newUser.username} (rôle membre_indiv) lié au membre ${getMemberFullName(m)} (${m.id}). Téléphone: ${f.telephone || '—'}, Email: ${f.adresseEmail || '—'}.`,
-      null, { ...newUser, password: '***' });
+    logAudit('create', 'users', 'Compte individuel ' + getMemberFullName(m), 'Création du compte membre_indiv @' + f.username + ' lié à ' + getMemberFullName(m), null, newUser);
   }
   closeModal();
-  toast('Compte créé', `Le compte individuel de ${getMemberFullName(m)} a été créé.\nIdentifiant: ${newUser.username}\nMot de passe: ${newUser.password}\nL'utilisateur devra changer le mot de passe à la première connexion.`, 'success', 8000);
+  const fullName = getMemberFullName(m);
+  toast(t('v628.successTitle'), t('v628.successBody').replace('{name}', fullName) + '\n\n💬 Communiquez au membre :\n  • Téléphone : ' + (f.telephone || '—') + '\n  • Mot de passe : ' + f.password, 'success');
   navigateTo('settings');
 }
 
-// 📨 V6.28 : Édition d'un compte membre_indiv (mot de passe, téléphone, email, username)
-let editIndivForm = { id:'', username:'', password:'', telephone:'', adresseEmail:'', membreId:'' };
-
-function editIndivMemberAccount(userId){
-  if(!isAdmin()){ toast('Accès refusé', 'Seuls les administrateurs peuvent modifier un compte.', 'error'); return; }
-  const u = state.users.find(x => x.id === userId);
-  if(!u){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
-  if(u.role !== 'membre_indiv'){
-    toast('Action non applicable', 'Cette fonction est réservée aux comptes membre_indiv. Pour les autres comptes, utilisez la réinitialisation du mot de passe.', 'info');
-    return;
+// Supprime un compte membre_indiv (admin only). La fiche membre est préservée.
+function deleteIndividualMember(userId){
+  if(!isAdmin()){ toast('Accès refusé', 'Seuls les administrateurs peuvent supprimer un compte.', 'error'); return; }
+  const user = state.users.find(u => u.id === userId);
+  if(!user){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
+  if(user.role !== 'membre_indiv'){
+    toast('Action interdite', 'Cette fonction ne supprime que les comptes individuels.', 'error'); return;
   }
-  editIndivForm = {
-    id: u.id,
-    username: u.username,
-    password: '', // vide = ne pas changer
-    telephone: u.telephone || '',
-    adresseEmail: u.adresseEmail || '',
-    membreId: u.membreId || '',
-  };
-  const m = u.membreId ? getMemberById(u.membreId) : null;
-  const memberInfo = m ? getMemberFullName(m) : '—';
-  const photoHTML = m && m.photo
-    ? `<img src="${m.photo}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0" alt="">`
-    : m ? `<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0f5b45,#10b981);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold">${escapeHtml(((m.prenoms||'').charAt(0) + (m.nom||'').charAt(0)).toUpperCase())}</div>` : '';
+  const m = user.membreId ? getMemberById(user.membreId) : null;
+  const fullName = m ? getMemberFullName(m) : user.username;
+  const msg = t('v628.deleteConfirm').replace('{name}', fullName);
+  if(!confirm(msg)) return;
+  // Log audit avant suppression
+  if(typeof logAudit === 'function'){
+    logAudit('delete', 'users', 'Compte individuel ' + fullName, 'Suppression du compte membre_indiv @' + user.username, user, null);
+  }
+  state.users = state.users.filter(u => u.id !== userId);
+  saveState();
+  toast('Compte supprimé', 'Le compte individuel de "' + fullName + '" a été supprimé. La fiche membre est préservée.', 'success');
+  navigateTo('settings');
+}
+
+// Réinitialise le mot de passe d'un compte membre_indiv (admin only).
+// Génère un nouveau mot de passe aléatoire et l'affiche.
+function resetIndividualPassword(userId){
+  if(!isAdmin()){ toast('Accès refusé', 'Seuls les administrateurs peuvent réinitialiser un mot de passe.', 'error'); return; }
+  const user = state.users.find(u => u.id === userId);
+  if(!user){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
+  if(user.role !== 'membre_indiv'){
+    toast('Action interdite', 'Cette fonction ne réinitialise que les comptes individuels.', 'error'); return;
+  }
+  const m = user.membreId ? getMemberById(user.membreId) : null;
+  const fullName = m ? getMemberFullName(m) : user.username;
+  const msg = t('v628.resetConfirm').replace('{name}', fullName);
+  if(!confirm(msg)) return;
+  const newPwd = generateRandomPassword();
+  user.password = newPwd;
+  user.mustChangePassword = true;
+  saveState();
+  if(typeof logAudit === 'function'){
+    logAudit('update', 'users', 'Mot de passe réinitialisé — ' + fullName, 'Réinitialisation MDP du compte membre_indiv @' + user.username, null, { password: '***', mustChangePassword: true });
+  }
+  // Affiche le nouveau mot de passe dans une modale (pour que l'admin puisse le dicter/copier)
   const body = `
-    <div class="form-alert info">
-      <strong>✏️ Modification du compte</strong> — Lié au membre: <strong>${escapeHtml(memberInfo)}</strong>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-      ${photoHTML}
-      <div>
-        <div style="font-weight:bold">${escapeHtml(memberInfo)}</div>
-        <div style="font-size:11px;color:var(--text-muted,#64748b)">Compte créé le ${new Date(u.createdAt || Date.now()).toLocaleDateString('fr-FR')}</div>
+    <div class="form-alert success" style="background:#f0fdf4;border:1px solid #10b981;padding:14px;border-radius:8px">
+      <strong>${t('v628.newPwdTitle')}</strong><br>
+      <div style="margin:12px 0;padding:14px;background:white;border:2px dashed #10b981;border-radius:8px;text-align:center">
+        <code style="font-size:20px;font-weight:bold;color:#10b981;letter-spacing:1px">${escapeHtml(newPwd)}</code>
       </div>
-    </div>
-    <div class="form-group">
-      <label>Nom d'utilisateur</label>
-      <input type="text" id="editIndivUsername" value="${escapeHtml(u.username)}" onchange="editIndivForm.username=this.value" autocomplete="off">
-      <p class="form-hint">L'utilisateur peut se connecter avec ce nom, son téléphone ou son email.</p>
-    </div>
-    <div class="form-group">
-      <label>Nouveau mot de passe (laisser vide pour ne pas changer)</label>
-      <input type="text" id="editIndivPassword" placeholder="— inchangé —" onchange="editIndivForm.password=this.value" autocomplete="off">
-      <p class="form-hint">Au moins 6 caractères. L'utilisateur devra le changer à sa prochaine connexion.</p>
-    </div>
-    <div class="grid-2" style="gap:10px">
-      <div class="form-group" style="margin:0">
-        <label>Téléphone</label>
-        <input type="text" id="editIndivTelephone" value="${escapeHtml(u.telephone || '')}" onchange="editIndivForm.telephone=this.value" autocomplete="off">
+      <p class="text-sm" style="margin:8px 0">${t('v628.resetPwdBody').replace('{name}', escapeHtml(fullName))}</p>
+      <div class="form-alert" style="background:#fef9c3;border:1px solid #eab308;padding:8px 10px;margin-top:8px">
+        <span class="text-sm" style="color:#92400e">${t('v628.sendSmsInfo')}</span>
       </div>
-      <div class="form-group" style="margin:0">
-        <label>Email</label>
-        <input type="email" id="editIndivEmail" value="${escapeHtml(u.adresseEmail || '')}" onchange="editIndivForm.adresseEmail=this.value" autocomplete="off">
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+        <strong>Identifiants complets :</strong><br>
+        • Téléphone : <code>${escapeHtml(user.telephone || '—')}</code><br>
+        • Email : <code>${escapeHtml(user.adresseEmail || '—')}</code><br>
+        • Username : <code>${escapeHtml(user.username)}</code><br>
+        • Mot de passe : <code>${escapeHtml(newPwd)}</code>
       </div>
     </div>
   `;
   const footer = `
-    <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-    <button class="btn btn-danger" onclick="deleteIndivMemberAccount('${u.id}')" style="margin-right:auto">🗑 Supprimer</button>
-    <button class="btn btn-primary" onclick="saveEditIndivMemberAccount()">💾 Enregistrer</button>
+    <button class="btn btn-secondary" onclick="closeModal()">Fermer</button>
+    <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${user.telephone || user.username} / ' + '${newPwd}'); toast('Copié', 'Identifiants copiés dans le presse-papiers.', 'success')">📋 Copier les identifiants</button>
   `;
-  openModal('✏️ Modifier le compte individuel', body, footer, 'modal-md');
+  openModal('🔑 ' + t('v628.newPwdTitle'), body, footer, 'modal-sm');
 }
 
-function saveEditIndivMemberAccount(){
-  if(!isAdmin()){ toast('Accès refusé', 'Action réservée aux administrateurs.', 'error'); return; }
-  const f = editIndivForm;
-  const u = state.users.find(x => x.id === f.id);
-  if(!u){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
-  if(!f.username || f.username.length < 3){
-    toast('Nom d\'utilisateur trop court', 'Au moins 3 caractères.', 'error'); return;
+// Copie les identifiants d'un compte membre_indiv dans le presse-papiers.
+function copyIndividualCredentials(userId){
+  const user = state.users.find(u => u.id === userId);
+  if(!user){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
+  if(user.role !== 'membre_indiv'){ toast('Erreur', 'Ce n\'est pas un compte individuel.', 'error'); return; }
+  const m = user.membreId ? getMemberById(user.membreId) : null;
+  const fullName = m ? getMemberFullName(m) : user.username;
+  const text = 'Identifiants APD-MINAT — ' + fullName + '\n' +
+               'Téléphone : ' + (user.telephone || '—') + '\n' +
+               'Email : ' + (user.adresseEmail || '—') + '\n' +
+               'Username : ' + user.username + '\n' +
+               'Mot de passe : ' + user.password;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(() => {
+      toast('Identifiants copiés', 'Vous pouvez les coller dans un SMS/WhatsApp pour ' + fullName + '.', 'success');
+    }).catch(() => {
+      // Fallback : ouvrir une modale avec le texte
+      const body = '<pre style="white-space:pre-wrap;background:#f8fafc;padding:12px;border-radius:6px;font-size:12px">' + escapeHtml(text) + '</pre>';
+      openModal('📋 Identifiants', body, '<button class="btn btn-secondary" onclick="closeModal()">Fermer</button>', 'modal-sm');
+    });
+  } else {
+    const body = '<pre style="white-space:pre-wrap;background:#f8fafc;padding:12px;border-radius:6px;font-size:12px">' + escapeHtml(text) + '</pre>';
+    openModal('📋 Identifiants', body, '<button class="btn btn-secondary" onclick="closeModal()">Fermer</button>', 'modal-sm');
   }
-  if(!/^[a-z0-9._-]+$/.test(f.username)){
-    toast('Format invalide', 'Lettres minuscules, chiffres, points, tirets et underscores uniquement.', 'error'); return;
-  }
-  if(state.users.some(x => x.id !== f.id && x.username.toLowerCase() === f.username.toLowerCase())){
-    toast('Nom déjà pris', `Le nom "${f.username}" existe déjà.`, 'error'); return;
-  }
-  if(f.password && f.password.length < 6){
-    toast('Mot de passe trop court', 'Au moins 6 caractères.', 'error'); return;
-  }
-  if(f.adresseEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.adresseEmail)){
-    toast('Email invalide', 'Format d\'email incorrect.', 'error'); return;
-  }
-  if(f.telephone && state.users.some(x => x.id !== f.id && x.role === 'membre_indiv' && x.telephone === f.telephone)){
-    toast('Téléphone déjà utilisé', `Le téléphone "${f.telephone}" appartient déjà à un autre compte.`, 'error'); return;
-  }
-  if(f.adresseEmail && state.users.some(x => x.id !== f.id && x.role === 'membre_indiv' && x.adresseEmail === f.adresseEmail)){
-    toast('Email déjà utilisé', `L'email "${f.adresseEmail}" appartient déjà à un autre compte.`, 'error'); return;
-  }
-  const before = { ...u, password: '***' };
-  // Applique les changements
-  u.username = f.username;
-  if(f.password){
-    u.password = f.password;
-    u.mustChangePassword = true;
-  }
-  u.telephone = f.telephone || null;
-  u.adresseEmail = f.adresseEmail || null;
-  saveState();
-  if(typeof logAudit === 'function'){
-    logAudit('update', 'users', `Compte membre_indiv ${u.username}`,
-      `Modification du compte ${u.username}. Username: ${f.username}, password: ${f.password ? 'changé' : 'inchangé'}, téléphone: ${f.telephone || '—'}, email: ${f.adresseEmail || '—'}.`,
-      before, { ...u, password: '***' });
-  }
-  closeModal();
-  toast('Compte modifié', `Le compte "${u.username}" a été mis à jour.`, 'success');
-  navigateTo('settings');
-}
-
-function deleteIndivMemberAccount(userId){
-  if(!isAdmin()){ toast('Accès refusé', 'Seuls les administrateurs peuvent supprimer un compte.', 'error'); return; }
-  const u = state.users.find(x => x.id === userId);
-  if(!u){ toast('Erreur', 'Compte introuvable.', 'error'); return; }
-  if(u.role !== 'membre_indiv'){
-    toast('Action non applicable', 'Utilisez la suppression standard pour les autres comptes.', 'info');
-    return;
-  }
-  if(!confirm(`Supprimer le compte individuel "${u.username}" ?\n\nLe membre associé (${u.membreId ? getMemberById(u.membreId) ? getMemberFullName(getMemberById(u.membreId)) : 'inconnu' : 'aucun'}) restera dans la base membres mais ne pourra plus se connecter.\n\nCette action est irréversible.`)) return;
-  const before = { ...u, password: '***' };
-  state.users = state.users.filter(x => x.id !== userId);
-  saveState();
-  if(typeof logAudit === 'function'){
-    logAudit('delete', 'users', `Compte membre_indiv ${u.username}`,
-      `Suppression du compte ${u.username} (membre_indiv).`, before, null);
-  }
-  closeModal();
-  toast('Compte supprimé', `Le compte "${u.username}" a été supprimé.`, 'success');
-  navigateTo('settings');
 }
 
 
