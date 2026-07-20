@@ -250,6 +250,27 @@
   .btn-deceased-list .icon{font-size:16px}
   .btn-deceased-list .count{background:#e5e7eb;color:#111827;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;margin-left:4px}
 
+  /* V6.27 — Messagerie instantanée : pulse, typing, présence */
+  @keyframes msg-live-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+  .msg-live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:4px;animation:msg-live-pulse 1.6s ease-in-out infinite;vertical-align:middle}
+  .msg-live-dot.offline{background:#94a3b8;animation:none;opacity:.6}
+  .msg-live-dot.syncing{background:#f59e0b;animation:msg-live-pulse .8s ease-in-out infinite}
+  .msg-typing-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-style:italic;padding:4px 10px;background:#f1f5f9;border-radius:8px;margin-top:4px;width:fit-content}
+  .msg-typing-dots{display:inline-flex;gap:2px}
+  .msg-typing-dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:#64748b;animation:msg-typing-bounce 1.2s ease-in-out infinite}
+  .msg-typing-dots span:nth-child(2){animation-delay:.15s}
+  .msg-typing-dots span:nth-child(3){animation-delay:.3s}
+  @keyframes msg-typing-bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+  .msg-presence{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#15803d}
+  .msg-presence.offline{background:#f1f5f9;color:#64748b}
+  .msg-presence.recent{background:#fef3c7;color:#a16207}
+  .msg-sync-countdown{display:inline-block;font-size:10px;color:#94a3b8;font-variant-numeric:tabular-nums;margin-left:6px;min-width:80px}
+  .msg-bubble-sending{opacity:.6;position:relative}
+  .msg-bubble-sending::after{content:'⟳';position:absolute;top:4px;right:6px;font-size:10px;color:#64748b;animation:msg-live-pulse 1s ease-in-out infinite}
+  .msg-bubble-new{animation:msg-bubble-appear .3s ease-out}
+  @keyframes msg-bubble-appear{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .msg-conv-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
 
   /* Stats grid */
   .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px}
@@ -605,7 +626,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.26</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.27</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -669,7 +690,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.26',
+    'sidebar.version': 'APD-MINAT • Version 6.27',
     'sidebar.copyright': '© 2026 — Amicale DICRP/MINAT',
     // Dashboard
     'dash.title': '📊 Tableau de bord',
@@ -1026,7 +1047,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.26',
+    'sidebar.version': 'APD-MINAT • Version 6.27',
     'sidebar.copyright': '© 2026 — DICRP/MINAT Association',
     // Dashboard
     'dash.title': '📊 Dashboard',
@@ -3971,17 +3992,33 @@ function doLogin(){
   if(user.username === 'admin'){
     showPendingAdminLoginNotifications();
   }
-  // 📨 V6.22 : démarre la messagerie instantanée (polling + cross-tab sync)
+  // 📨 V6.22 / V6.27 : démarre la messagerie instantanée (polling + cross-tab sync + typing + présence)
   try {
     if(typeof setupCrossTabSync === 'function') setupCrossTabSync();
     if(typeof startMessagePolling === 'function') startMessagePolling();
+    // V6.27 : démarre le heartbeat de présence (annonce toutes les 20s)
+    if(typeof startPresenceHeartbeat === 'function') startPresenceHeartbeat();
+    // V6.27 : démarre le check périodique de présence (10s)
+    if(typeof startPresenceCheck === 'function') startPresenceCheck();
+    // V6.27 : au focus de la fenêtre → pull immédiat (bypass throttle)
+    window.addEventListener('focus', () => {
+      if(typeof _msgLastPollAt !== 'undefined') _msgLastPollAt = 0;
+      if(typeof pullMessagesFromCloud === 'function') pullMessagesFromCloud().catch(()=>{});
+    });
+    // V6.27 : au retour de visibilité → pull immédiat
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible'){
+        if(typeof _msgLastPollAt !== 'undefined') _msgLastPollAt = 0;
+        if(typeof pullMessagesFromCloud === 'function') pullMessagesFromCloud().catch(()=>{});
+      }
+    });
     // Pull initial des messages après 2s (pour récupérer les messages récents du cloud)
     setTimeout(() => {
       if(typeof pullMessagesFromCloud === 'function'){
         pullMessagesFromCloud().catch(()=>{});
       }
     }, 2000);
-  } catch(e){ console.warn('V6.22: messaging init skipped:', e); }
+  } catch(e){ console.warn('V6.22/V6.27: messaging init skipped:', e); }
   // 🌐 V6.3 : si l'utilisateur est un membre (lecture seule), on charge les données publiées (data.json)
   // depuis le serveur (Vercel). Les admins utilisent leurs données locales (IndexedDB).
   // 🌐 V6.16 : en PRIORITÉ, on tente un PULL Supabase (temps réel) avant data.json (statique).
@@ -4447,7 +4484,7 @@ MODULES.messages = function(){
     msgSent: 'Message envoyé',
     msgSentBody: 'Votre message a été envoyé à',
     infoTitle: 'ℹ️ À propos de la messagerie',
-    infoBody: 'La messagerie est <strong>instantanée</strong> (V6.22) : les messages sont synchronisés en temps réel via le cloud. <strong>Pièces jointes</strong> (V6.23) : photos et documents (1 Mo max par fichier). Pour le compte <code>membre</code> (partagé), tous les membres voient les messages reçus — évitez d\'y partager des informations sensibles.',
+    infoBody: 'La messagerie est <strong>instantanée</strong> (V6.27) : polling 2s, indicateur « en train d\'écrire », présence en temps réel, accusés de lecture. <strong>Pièces jointes</strong> (V6.23) : photos et documents (1 Mo max par fichier). Pour le compte <code>membre</code> (partagé), tous les membres voient les messages reçus — évitez d\'y partager des informations sensibles.',
     noMessagesYet: 'Aucun message dans cette conversation',
     noMessagesHint: 'Écrivez le premier message ci-dessous.',
     backToList: '← Conversations',
@@ -4494,7 +4531,7 @@ MODULES.messages = function(){
     msgSent: 'Message sent',
     msgSentBody: 'Your message has been sent to',
     infoTitle: 'ℹ️ About messaging',
-    infoBody: 'Messaging is <strong>instant</strong> (V6.22): messages are synced in real-time via the cloud. <strong>Attachments</strong> (V6.23): photos and documents (1 MB max per file). For the <code>member</code> shared account, all members see received messages — avoid sharing sensitive information there.',
+    infoBody: 'Messaging is <strong>instant</strong> (V6.27): 2s polling, typing indicator, real-time presence, read receipts. <strong>Attachments</strong> (V6.23): photos and documents (1 MB max per file). For the <code>member</code> shared account, all members see received messages — avoid sharing sensitive information there.',
     noMessagesYet: 'No messages in this conversation',
     noMessagesHint: 'Write the first message below.',
     backToList: '← Conversations',
@@ -4641,14 +4678,32 @@ function renderConversation(otherUser, L){
         : `<span style="color:#dc2626;font-size:11px;font-weight:600">● ${isFr?'Hors-ligne':'Offline'}</span>`)
     : `<span style="color:#94a3b8;font-size:11px">○ ${isFr?'Local uniquement':'Local only'}</span>`;
 
+  // V6.27 : détermine le statut de présence initial
+  updatePresenceCache(otherUser, _presenceCache[otherUser] || 0);
+  const presenceStatus = getPresenceStatus(otherUser);
+  const presenceLabel = presenceStatus === 'online'
+    ? (isFr ? 'En ligne' : 'Online')
+    : presenceStatus === 'recent'
+      ? (isFr ? 'Vu récemment' : 'Seen recently')
+      : (isFr ? 'Hors-ligne' : 'Offline');
+  const presenceClass = presenceStatus === 'online' ? '' : (presenceStatus === 'recent' ? ' recent' : ' offline');
+
   let html = `
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <button class="btn btn-ghost" onclick="state._msgViewUser=null; navigateTo('messages')">${L.backBtn}</button>
-      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-        <h2 style="margin:0;font-size:18px">${getUserDisplayLabel(otherUser)}</h2>
-        ${realtimeStatus}
+      <div class="msg-conv-header" style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <h2 style="margin:0;font-size:18px;display:flex;align-items:center;gap:6px">
+          <span id="msgLiveDot" class="msg-live-dot" title="Temps réel"></span>
+          ${getUserDisplayLabel(otherUser)}
+        </h2>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <span id="msgPresence" class="msg-presence${presenceClass}">${presenceStatus === 'online' ? '●' : presenceStatus === 'recent' ? '●' : '○'} ${presenceLabel}</span>
+          ${realtimeStatus}
+          <span id="msgSyncCountdown" class="msg-sync-countdown"></span>
+        </div>
       </div>
     </div>
+    <div id="msgTypingIndicator" class="msg-typing-indicator" style="display:none"></div>
   `;
 
   if(messages.length === 0){
@@ -4710,7 +4765,7 @@ function renderConversation(otherUser, L){
   html += `
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-top:8px">
       <div style="font-size:12px;color:#64748b;margin-bottom:8px">${L.replyHint} <strong>${getUserDisplayLabel(otherUser)}</strong></div>
-      <textarea id="msgReplyBody" placeholder="${L.placeholder}" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical" onkeydown="handleReplyKeydown(event,'${otherUser}')"></textarea>
+      <textarea id="msgReplyBody" placeholder="${L.placeholder}" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical" onkeydown="handleReplyKeydown(event,'${otherUser}')" oninput="onReplyInput(this,'${otherUser}')" onblur="onReplyBlur('${otherUser}')"></textarea>
       <input type="file" id="msgReplyFileInput" multiple accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" style="display:none" onchange="addMessageAttachment(this)">
       <div style="display:flex;gap:8px;margin-top:8px;justify-content:space-between;align-items:center;flex-wrap:wrap">
         <button class="btn btn-ghost" onclick="document.getElementById('msgReplyFileInput').click()" style="font-size:12px;padding:4px 10px" title="${L.addAttachmentHint}">${L.addAttachment}</button>
@@ -4792,12 +4847,26 @@ function sendReply(toUser){
   state._msgDraftAttachments = [];
   saveState();
   // 📨 V6.22 : pousse immédiatement vers le cloud pour partage temps réel
-  if(typeof pushMessagesToCloud === 'function'){
-    pushMessagesToCloud().catch(()=>{});
-  }
+  // 📨 V6.27 : attend le push puis pull immédiat pour récupérer les accusés
+  (async () => {
+    try {
+      if(typeof pushMessagesToCloud === 'function'){
+        await pushMessagesToCloud();
+      }
+      // V6.27 : bypass throttle pour récupérer les messages frais immédiatement
+      if(typeof pullMessagesFromCloud === 'function' && typeof _msgLastPollAt !== 'undefined'){
+        _msgLastPollAt = 0;
+        await pullMessagesFromCloud();
+      }
+    } catch(_){ /* silent */ }
+  })();
   // Notifie les autres onglets du même navigateur
   if(typeof notifyOtherTabsMessageUpdate === 'function'){
     notifyOtherTabsMessageUpdate();
+  }
+  // V6.27 : broadcast l'événement "nouveau message" pour déclencher un pull chez les autres
+  if(typeof broadcastNewMessage === 'function'){
+    broadcastNewMessage(msg);
   }
   // Re-render la conversation
   navigateTo('messages');
@@ -4808,8 +4877,13 @@ function sendReply(toUser){
   setTimeout(scrollConversationToBottom, 50);
 }
 
-// 📨 V6.22 : scroll automatique en bas de conversation
+// 📨 V6.22 / V6.27 : scroll automatique en bas de conversation (intelligent)
 function scrollConversationToBottom(){
+  // V6.27 : privilégie #msgConvScroll et utilise smartScrollToBottom
+  if(typeof smartScrollToBottom === 'function'){
+    smartScrollToBottom();
+    return;
+  }
   const containers = document.querySelectorAll('[style*="max-height:60vh"]');
   containers.forEach(c => { c.scrollTop = c.scrollHeight; });
 }
@@ -4961,11 +5035,24 @@ function sendNewMessage(){
   // 📎 V6.23 : efface le brouillon pièces jointes
   state._msgDraftAttachments = [];
   // 📨 V6.22 : pousse immédiatement vers le cloud pour partage temps réel
-  if(typeof pushMessagesToCloud === 'function'){
-    pushMessagesToCloud().catch(()=>{});
-  }
+  // 📨 V6.27 : attend le push puis pull immédiat pour récupérer les accusés
+  (async () => {
+    try {
+      if(typeof pushMessagesToCloud === 'function'){
+        await pushMessagesToCloud();
+      }
+      if(typeof pullMessagesFromCloud === 'function' && typeof _msgLastPollAt !== 'undefined'){
+        _msgLastPollAt = 0;
+        await pullMessagesFromCloud();
+      }
+    } catch(_){ /* silent */ }
+  })();
   if(typeof notifyOtherTabsMessageUpdate === 'function'){
     notifyOtherTabsMessageUpdate();
+  }
+  // V6.27 : broadcast l'événement "nouveau message"
+  if(typeof broadcastNewMessage === 'function'){
+    broadcastNewMessage({ from: state.currentUser.username, at: Date.now() });
   }
   // Demande permission notifications navigateur (au premier envoi)
   if(typeof requestNotificationPermission === 'function'){
@@ -11195,9 +11282,9 @@ async function pushMessagesToCloud(){
   if(!isCloudConfigured()) return false;
   if(!isOnline()) return false;
   if(_msgPushInProgress) return false;
-  // Throttle 3s entre les pushes de messages
+  // V6.27 : throttle 800ms (au lieu de 3s) pour envoi quasi instantané
   const now = Date.now();
-  if(now - _msgPushLastAt < 3000) return false;
+  if(now - _msgPushLastAt < 800) return false;
   _msgPushInProgress = true;
   _msgPushLastAt = now;
   try {
@@ -11283,9 +11370,9 @@ async function pullMessagesFromCloud(){
   if(!isCloudConfigured()) return false;
   if(!isOnline()) return false;
   if(_syncInProgress) return false;
-  // Throttle 4s entre les pulls de messages
+  // V6.27 : throttle 1.2s (au lieu de 4s) pour réception quasi instantanée
   const now = Date.now();
-  if(now - _msgLastPollAt < 4000) return false;
+  if(now - _msgLastPollAt < 1200) return false;
   _msgLastPollAt = now;
   try {
     const cloud = await fetchCloudRecord();
@@ -11339,18 +11426,84 @@ async function pullMessagesFromCloud(){
   }
 }
 
-// Démarre le polling rapide des messages (toutes les 6s quand sur le module messages,
-// 15s sinon). Plus rapide que le pull global 30s.
+// V6.27 — Polling adaptatif pour messagerie VRAIMENT instantanée
+//  - 2s quand on est sur l'onglet messages ET la page est visible
+//  - 5s quand on est ailleurs sur l'app (page visible)
+//  - 12s quand l'onglet est caché (mais qu'on est quand même sur messages)
+//  - 0 (désactivé) quand l'onglet est caché ET pas sur messages
+function getMessagePollingInterval(){
+  if(!isCloudConfigured()) return 0;
+  const onMessages = (state.activeModule === 'messages');
+  const visible = !document.hidden;
+  if(onMessages && visible) return 2000;   // 2s — instantané
+  if(onMessages && !visible) return 12000; // 12s — on garde la sync
+  if(visible) return 5000;                  // 5s — autre onglet visible
+  return 0;                                  // 0 — onglet caché, pas sur messages
+}
 function startMessagePolling(){
   stopMessagePolling();
   if(!isCloudConfigured()) return;
-  const interval = (state.activeModule === 'messages') ? 6000 : 15000;
+  let interval = getMessagePollingInterval();
+  if(interval === 0){
+    console.log('📨 V6.27: message polling désactivé (onglet caché)');
+    return;
+  }
   _msgFastPollTimer = setInterval(() => {
     if(!isOnline()) return;
-    if(document.hidden && state.activeModule !== 'messages') return;
+    // Recalcule dynamiquement l'intervalle (si l'utilisateur change d'onglet)
+    const newInterval = getMessagePollingInterval();
+    if(newInterval !== interval){
+      console.log('📨 V6.27: polling interval changé', interval/1000, '→', newInterval/1000);
+      interval = newInterval;
+      startMessagePolling();  // redémarre avec le nouvel intervalle
+      return;
+    }
+    if(newInterval === 0){
+      stopMessagePolling();
+      return;
+    }
     pullMessagesFromCloud().catch(()=>{});
+    // V6.27 : met à jour le compte à rebours "Prochaine sync dans Xs"
+    updateSyncCountdownDisplay(interval);
   }, interval);
-  console.log('📨 V6.22: message polling démarré (', interval/1000, 's )');
+  console.log('📨 V6.27: message polling démarré (', interval/1000, 's )');
+  // Démarre aussi le compteur visuel
+  startSyncCountdown(interval);
+}
+
+// V6.27 — Compte à rebours "Prochaine sync dans Xs"
+let _syncCountdownTimer = null;
+let _syncCountdownValue = 0;
+function startSyncCountdown(intervalMs){
+  stopSyncCountdown();
+  if(intervalMs === 0) return;
+  _syncCountdownValue = Math.floor(intervalMs / 1000);
+  updateSyncCountdownDisplay(intervalMs);
+  _syncCountdownTimer = setInterval(() => {
+    _syncCountdownValue = Math.max(0, _syncCountdownValue - 1);
+    updateSyncCountdownDisplay(intervalMs);
+    if(_syncCountdownValue === 0){
+      _syncCountdownValue = Math.floor(intervalMs / 1000);
+    }
+  }, 1000);
+}
+function stopSyncCountdown(){
+  if(_syncCountdownTimer){
+    clearInterval(_syncCountdownTimer);
+    _syncCountdownTimer = null;
+  }
+}
+function updateSyncCountdownDisplay(intervalMs){
+  const el = document.getElementById('msgSyncCountdown');
+  if(!el) return;
+  const onMessages = (state.activeModule === 'messages');
+  if(!onMessages){ el.textContent = ''; return; }
+  if(!isCloudConfigured()){ el.textContent = ''; return; }
+  if(!isOnline()){
+    el.innerHTML = '<span style="color:#dc2626">● Hors-ligne</span>';
+    return;
+  }
+  el.innerHTML = '<span class="msg-live-dot"></span> Prochaine sync dans ' + _syncCountdownValue + 's';
 }
 function stopMessagePolling(){
   if(_msgFastPollTimer){
@@ -11369,6 +11522,8 @@ function onNewMessagesReceived(count){
   // Met à jour l'UI si on est sur le module messages
   if(state.activeModule === 'messages' && typeof navigateTo === 'function'){
     navigateTo('messages');
+    // V6.27 : smart scroll (ne scroll que si l'utilisateur était déjà en bas)
+    setTimeout(smartScrollToBottom, 100);
   }
   // Met à jour le badge dans la sidebar
   if(typeof renderNav === 'function') renderNav();
@@ -11465,12 +11620,37 @@ function setupCrossTabSync(){
     try {
       _msgBroadcastChannel = new BroadcastChannel('apdminat_messages');
       _msgBroadcastChannel.onmessage = (evt) => {
-        if(evt && evt.data && evt.data.type === 'messages_updated'){
+        if(!evt || !evt.data || !evt.data.type) return;
+        const d = evt.data;
+        if(d.type === 'messages_updated'){
           // Recharge les messages depuis le stockage local
           reloadMessagesFromStorage();
+        } else if(d.type === 'new_message'){
+          // V6.27 : un autre onglet a envoyé un message → pull immédiat
+          if(typeof _msgLastPollAt !== 'undefined') _msgLastPollAt = 0;
+          if(typeof pullMessagesFromCloud === 'function'){
+            pullMessagesFromCloud().catch(()=>{});
+          } else {
+            reloadMessagesFromStorage();
+          }
+        } else if(d.type === 'typing'){
+          // V6.27 : afficher l'indicateur "… en train d'écrire"
+          if(d.from && d.to === state.currentUser.username){
+            showTypingIndicator(d.from);
+          }
+        } else if(d.type === 'stopped_typing'){
+          // V6.27 : masquer l'indicateur
+          if(d.from){
+            hideTypingIndicator(d.from);
+          }
+        } else if(d.type === 'presence'){
+          // V6.27 : mise à jour de présence
+          if(d.user){
+            updatePresenceCache(d.user, d.at);
+          }
         }
       };
-      console.log('📨 V6.22: BroadcastChannel cross-tab sync actif');
+      console.log('📨 V6.22/V6.27: BroadcastChannel cross-tab sync actif (avec typing + présence)');
     } catch(e){
       console.debug('BroadcastChannel non disponible:', e.message);
     }
@@ -11515,6 +11695,239 @@ function setupCrossTabSync(){
     }
   });
 }
+
+
+// ════════════════════════════════════════════════════════════════
+// 📨 V6.27 : MESSAGERIE VRAIMENT INSTANTANÉE — Typing + Presence + Broadcast
+// ════════════════════════════════════════════════════════════════
+
+// Broadcast un événement "nouveau message" aux autres onglets
+function broadcastNewMessage(msg){
+  if(_msgBroadcastChannel){
+    try {
+      _msgBroadcastChannel.postMessage({
+        type: 'new_message',
+        from: msg?.from || (state.currentUser ? state.currentUser.username : 'unknown'),
+        to: msg?.to,
+        at: Date.now(),
+      });
+    } catch(_){ /* silent */ }
+  }
+}
+
+// --- Indicateur "… en train d'écrire" ---
+let _typingTimers = {};   // { username: timeoutId }
+let _typingState = {};    // { username: bool } — qui est en train d'écrire vers moi ?
+
+function broadcastTyping(toUser){
+  if(!_msgBroadcastChannel) return;
+  if(!state.currentUser) return;
+  try {
+    _msgBroadcastChannel.postMessage({
+      type: 'typing',
+      from: state.currentUser.username,
+      to: toUser,
+      at: Date.now(),
+    });
+  } catch(_){ /* silent */ }
+}
+function broadcastStoppedTyping(toUser){
+  if(!_msgBroadcastChannel) return;
+  if(!state.currentUser) return;
+  try {
+    _msgBroadcastChannel.postMessage({
+      type: 'stopped_typing',
+      from: state.currentUser.username,
+      to: toUser,
+      at: Date.now(),
+    });
+  } catch(_){ /* silent */ }
+}
+
+// Affiche l'indicateur "X est en train d'écrire…" dans la conversation courante
+function showTypingIndicator(fromUser){
+  if(!state._msgViewUser || state._msgViewUser !== fromUser) return;
+  _typingState[fromUser] = true;
+  // Re-render léger : ajoute l'indicateur sous l'en-tête
+  let el = document.getElementById('msgTypingIndicator');
+  if(!el){
+    const header = document.querySelector('.msg-conv-header');
+    if(header){
+      el = document.createElement('div');
+      el.id = 'msgTypingIndicator';
+      el.className = 'msg-typing-indicator';
+      header.insertAdjacentElement('afterend', el);
+    }
+  }
+  if(el){
+    const label = (typeof getUserDisplayLabel === 'function') ? getUserDisplayLabel(fromUser) : fromUser;
+    el.innerHTML = `<div class="msg-typing-dots"><span></span><span></span><span></span></div> ${label} est en train d\\'écrire…`;
+    el.style.display = 'flex';
+  }
+  // Auto-masque après 5s sans nouvelle notification
+  if(_typingTimers[fromUser]) clearTimeout(_typingTimers[fromUser]);
+  _typingTimers[fromUser] = setTimeout(() => hideTypingIndicator(fromUser), 5000);
+}
+
+function hideTypingIndicator(fromUser){
+  _typingState[fromUser] = false;
+  const el = document.getElementById('msgTypingIndicator');
+  if(el && (!fromUser || state._msgViewUser === fromUser)){
+    el.style.display = 'none';
+  }
+  if(_typingTimers[fromUser]){
+    clearTimeout(_typingTimers[fromUser]);
+    delete _typingTimers[fromUser];
+  }
+}
+
+// Handler "input" sur le textarea — broadcast typing (throttle 1.5s)
+let _lastTypingBroadcastAt = 0;
+let _typingActiveFor = null;  // user vers qui on est en train d'écrire
+function onReplyInput(textareaEl, toUser){
+  // Si on change de destinataire, on stoppe le typing précédent
+  if(_typingActiveFor && _typingActiveFor !== toUser){
+    broadcastStoppedTyping(_typingActiveFor);
+    _typingActiveFor = null;
+  }
+  const now = Date.now();
+  if(now - _lastTypingBroadcastAt > 1500){
+    _lastTypingBroadcastAt = now;
+    _typingActiveFor = toUser;
+    broadcastTyping(toUser);
+  }
+}
+function onReplyBlur(toUser){
+  if(_typingActiveFor === toUser){
+    broadcastStoppedTyping(toUser);
+    _typingActiveFor = null;
+  }
+}
+
+// --- Présence (online/recent/offline) ---
+let _presenceCache = {};  // { username: timestamp dernière activité }
+function updatePresenceCache(username, ts){
+  if(!username) return;
+  _presenceCache[username] = ts || Date.now();
+  // Si on est sur la conversation avec cet user, on met à jour l'affichage
+  if(state._msgViewUser === username){
+    updatePresenceDisplay(username);
+  }
+}
+function getPresenceStatus(username){
+  const ts = _presenceCache[username];
+  if(!ts) return 'unknown';
+  const diff = Date.now() - ts;
+  if(diff < 30000) return 'online';       // < 30s
+  if(diff < 5*60*1000) return 'recent';   // < 5 min
+  return 'offline';
+}
+function updatePresenceDisplay(username){
+  const el = document.getElementById('msgPresence');
+  if(!el) return;
+  const status = getPresenceStatus(username);
+  const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') || (typeof CURRENT_LANG === 'undefined');
+  if(status === 'online'){
+    el.className = 'msg-presence';
+    el.innerHTML = '● ' + (isFr ? 'En ligne' : 'Online');
+  } else if(status === 'recent'){
+    el.className = 'msg-presence recent';
+    const mins = Math.floor((Date.now() - _presenceCache[username]) / 60000);
+    el.innerHTML = '● ' + (isFr ? `Vu il y a ${mins} min` : `Seen ${mins} min ago`);
+  } else {
+    el.className = 'msg-presence offline';
+    el.innerHTML = '○ ' + (isFr ? 'Hors-ligne' : 'Offline');
+  }
+}
+
+// V6.27 — Annonce sa propre présence toutes les 20s (broadcast cross-tab)
+let _presenceHeartbeatTimer = null;
+function startPresenceHeartbeat(){
+  stopPresenceHeartbeat();
+  if(!state.currentUser) return;
+  // Annonce immédiate
+  broadcastPresence(state.currentUser.username);
+  // Puis toutes les 20s
+  _presenceHeartbeatTimer = setInterval(() => {
+    broadcastPresence(state.currentUser.username);
+  }, 20000);
+}
+function stopPresenceHeartbeat(){
+  if(_presenceHeartbeatTimer){
+    clearInterval(_presenceHeartbeatTimer);
+    _presenceHeartbeatTimer = null;
+  }
+}
+function broadcastPresence(username){
+  if(!_msgBroadcastChannel) return;
+  try {
+    _msgBroadcastChannel.postMessage({
+      type: 'presence',
+      user: username,
+      at: Date.now(),
+    });
+  } catch(_){ /* silent */ }
+}
+
+// V6.27 — Vérifie périodiquement les présences (toutes les 10s) et rafraîchit l'affichage
+let _presenceCheckTimer = null;
+function startPresenceCheck(){
+  stopPresenceCheck();
+  _presenceCheckTimer = setInterval(() => {
+    if(state._msgViewUser){
+      updatePresenceDisplay(state._msgViewUser);
+    }
+  }, 10000);
+}
+function stopPresenceCheck(){
+  if(_presenceCheckTimer){
+    clearInterval(_presenceCheckTimer);
+    _presenceCheckTimer = null;
+  }
+}
+
+// V6.27 — Auto-scroll intelligent : ne scroll en bas QUE si l'utilisateur y était déjà
+function isScrolledToBottom(container){
+  if(!container) return true;
+  const threshold = 80;  // 80px de tolérance
+  return (container.scrollHeight - container.scrollTop - container.clientHeight) < threshold;
+}
+function smartScrollToBottom(){
+  const container = document.getElementById('msgConvScroll');
+  if(!container) return;
+  if(isScrolledToBottom(container)){
+    container.scrollTop = container.scrollHeight;
+  }
+}
+
+// V6.27 — Met à jour l'en-tête de conversation avec le statut live + présence
+function updateConversationLiveHeader(){
+  const dot = document.getElementById('msgLiveDot');
+  if(!dot) return;
+  const cloudOk = (typeof isCloudConfigured === 'function') && isCloudConfigured();
+  const online = (typeof isOnline === 'function') ? isOnline() : true;
+  if(!cloudOk){
+    dot.className = 'msg-live-dot offline';
+    dot.title = 'Local uniquement';
+  } else if(!online){
+    dot.className = 'msg-live-dot offline';
+    dot.title = 'Hors-ligne';
+  } else if(_msgPushInProgress || (_msgLastPollAt && (Date.now() - _msgLastPollAt < 1500))){
+    dot.className = 'msg-live-dot syncing';
+    dot.title = 'Synchronisation en cours…';
+  } else {
+    dot.className = 'msg-live-dot';
+    dot.title = 'Temps réel actif';
+  }
+}
+
+// Exposer globalement pour les handlers inline
+window.broadcastNewMessage = broadcastNewMessage;
+window.broadcastTyping = broadcastTyping;
+window.broadcastStoppedTyping = broadcastStoppedTyping;
+window.onReplyInput = onReplyInput;
+window.onReplyBlur = onReplyBlur;
+window.refreshCurrentConversation = refreshCurrentConversation;
 
 // Notifie les autres onglets qu'il y a de nouveaux messages locaux.
 function notifyOtherTabsMessageUpdate(){
