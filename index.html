@@ -559,6 +559,13 @@
   from{opacity:0;transform:translateX(-50%) translateY(10px)}
   to{opacity:1;transform:translateX(-50%) translateY(0)}
 }
+/* 🔔 V6.33 : Animation spin globale pour les spinners de chargement.
+     Utilisée par le spinner dans le message d'erreur de login (sync cloud),
+     et par le bouton de sync manuelle. Avant V6.33, @keyframes spin n'était
+     défini que dynamiquement par showLoadingIndicator(), ce qui voulait dire
+     que tout spinner sur l'écran de login (avant showLoadingIndicator) ne
+     tournait pas. */
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
 </style>
 <!-- 📱 V6.31 PWA: manifest + theme-color + iOS meta tags for installable app
@@ -596,6 +603,13 @@
       <input type="password" id="loginPassword" data-i18n-placeholder="login.passwordPlaceholder" placeholder="Entrez votre mot de passe" autocomplete="current-password">
     </div>
     <button onclick="doLogin()" data-i18n="login.submit">Se connecter</button>
+    <!-- 🔔 V6.33 : Bouton manuel de synchronisation des comptes membre_indiv.
+         Permet à l'utilisateur (sur Firefox/Safari/Edge ou navigateurs sans cache local)
+         de forcer la récupération des comptes créés par l'admin depuis le cloud,
+         SANS avoir à tenter une connexion échouée d'abord. -->
+    <button id="manualSyncBtn" type="button" onclick="manualSyncUsersIndiv()" style="width:100%;margin-top:8px;padding:8px 12px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s" onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f9ff'" title="Récupérer les comptes membre depuis le cloud">
+      <span data-i18n="login.syncAccounts">🔄 Synchroniser les comptes</span>
+    </button>
     <div style="text-align:center;margin-top:10px">
       <a href="javascript:void(0)" onclick="showForgotPasswordWizard()" style="color:#0f5b45;font-size:13px;font-weight:600;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" data-i18n="login.forgotPassword">🔑 Mot de passe oublié ?</a>
     </div>
@@ -628,7 +642,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.32</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.33</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -668,6 +682,7 @@ const TRANSLATIONS = {
     'login.passwordPlaceholder': 'Entrez votre mot de passe',
     'login.identifierHint': "💡 Membres individuels : vous pouvez saisir votre nom d'utilisateur, votre numéro de téléphone ou votre adresse email.",
     'login.submit': 'Se connecter',
+    'login.syncAccounts': '🔄 Synchroniser les comptes',
     'login.forgotPassword': '🔑 Mot de passe oublié ?',
     'login.secureHint': 'Pour des raisons de sécurité, les identifiants ne sont pas affichés publiquement. Si vous avez oublié votre mot de passe, cliquez sur « Mot de passe oublié ? » ci-dessus ou contactez l\'administrateur technique ou un membre du Bureau Exécutif.',
     // Nav menu
@@ -693,7 +708,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.32',
+    'sidebar.version': 'APD-MINAT • Version 6.33',
     'v628.indivTitle': '👤 Comptes membres individuels',
     'v628.indivSubtitle': 'Créez un compte personnel pour chaque membre afin qu\'il puisse discuter en messagerie instantanée. Le membre se connectera avec son numéro de téléphone, son email ou son nom d\'utilisateur.',
     'v628.createIndivBtn': '➕ Créer un compte membre',
@@ -1054,6 +1069,7 @@ const TRANSLATIONS = {
     'login.passwordPlaceholder': 'Enter your password',
     'login.identifierHint': "💡 Individual members: you can enter your username, your phone number, or your email address.",
     'login.submit': 'Log in',
+    'login.syncAccounts': '🔄 Sync accounts',
     'login.forgotPassword': '🔑 Forgot password?',
     'login.membersTitle': '👥 Association Members',
     'login.membersHint': 'Use the shared account below to access the application:',
@@ -1084,7 +1100,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.32',
+    'sidebar.version': 'APD-MINAT • Version 6.33',
     'v628.indivTitle': '👤 Individual member accounts',
     'v628.indivSubtitle': 'Create a personal account for each member so they can chat in instant messaging. The member will log in with their phone number, email, or username.',
     'v628.createIndivBtn': '➕ Create member account',
@@ -2763,6 +2779,28 @@ function finalizeLoad(){
   try {
     if(typeof isCloudConfigured === 'function' && isCloudConfigured() && state.sync.autoSync){
       if(typeof startAutoSyncTimer === 'function') startAutoSyncTimer();
+      // 🔔 V6.33 : FETCH LÉGER DES COMPTES MEMBRE_INDIV APRÈS 800ms
+      // C'est CRITIQUE pour Firefox/Safari/Edge où l'utilisateur n'a pas de cache local
+      // et où le silentPull complet (à 2-3s) peut être trop lent par rapport à la
+      // frappe de l'utilisateur. On lance un fetch LÉGER (uniquement usersIndiv) très
+      // tôt, pour que les comptes soient disponibles avant même que l'utilisateur
+      // ait fini de taper ses identifiants.
+      if(typeof fetchUsersIndivFromCloud === 'function'){
+        setTimeout(() => {
+          try {
+            const currentIndiv = (state.users||[]).filter(u => u && u.role === 'membre_indiv').length;
+            // Ne fetch QUE si on n'a pas déjà de comptes indiv localement
+            // (sinon ça sert à rien, et ça ferait des requêtes inutiles)
+            if(currentIndiv === 0){
+              fetchUsersIndivFromCloud().then(r => {
+                if(r && r.ok && r.added > 0){
+                  console.log('[V6.33] 👤 Pré-fetch des comptes membre_indiv réussi (' + r.added + ' comptes)');
+                }
+              }).catch(e => console.warn('[V6.33] Pré-fetch indiv échoué:', e.message || e));
+            }
+          } catch(e){ console.warn('[V6.33] Pré-fetch indiv error:', e); }
+        }, 800);
+      }
       // Pull initial après 3 secondes (laisse le temps à l'UI de se charger)
       // On vérifie d'abord si le cloud a des données — sinon on ne fait rien (pas d'erreur)
       setTimeout(async () => {
@@ -4007,6 +4045,116 @@ function normalizePhone(s){
   return d;
 }
 
+// 🔔 V6.33 : Synchronisation MANUELLE des comptes membre_indiv depuis le cloud.
+// Appelée par le bouton "🔄 Synchroniser les comptes" sur l'écran de login.
+// Permet aux utilisateurs (notamment sur Firefox/Safari/Edge qui n'ont pas de cache
+// local) de forcer la récupération des comptes créés par l'admin SANS avoir à
+// tenter une connexion échouée d'abord. Affiche un retour visuel clair (spinner
+// + toast) pendant et après l'opération.
+async function manualSyncUsersIndiv(){
+  const btn = document.getElementById('manualSyncBtn');
+  const err = document.getElementById('loginError');
+  const originalHTML = btn ? btn.innerHTML : '';
+  // Vérifie la config et la connexion
+  if(typeof isCloudConfigured !== 'function' || !isCloudConfigured()){
+    if(err){
+      err.textContent = '⚠️ La synchronisation cloud n\'est pas configurée sur cet appareil. Contactez l\'administrateur.';
+      err.style.display = 'block';
+    }
+    return;
+  }
+  if(typeof isOnline !== 'function' || !isOnline()){
+    if(err){
+      err.textContent = '⚠️ Vous êtes hors-ligne. Reconnectez-vous à Internet puis réessayez.';
+      err.style.display = 'block';
+    }
+    return;
+  }
+  // Réinitialise le flag de retry pour permettre une nouvelle auto-tentative après sync manuelle
+  window._v633SyncRetryDone = false;
+  // Affiche le spinner
+  if(btn){
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.style.cursor = 'wait';
+    btn.innerHTML = '<span>⏳ Synchronisation en cours…</span>';
+  }
+  if(err){ err.style.display = 'none'; }
+  // Lance le fetch
+  try {
+    const result = await fetchUsersIndivFromCloud();
+    const newIndivCount = (state.users||[]).filter(x => x.role === 'membre_indiv').length;
+    if(result.ok && (result.added > 0 || result.updated > 0)){
+      if(typeof toast === 'function'){
+        toast('✅ Comptes synchronisés',
+          (result.added || 0) + ' nouveau(x) + ' + (result.updated || 0) + ' mis à jour. ' +
+          'Vous pouvez maintenant vous connecter avec votre téléphone, email ou nom d\'utilisateur.',
+          'success');
+      }
+      if(err){
+        err.textContent = '✅ ' + newIndivCount + ' compte(s) membre disponible(s). Saisissez vos identifiants et cliquez sur « Se connecter ».';
+        err.style.background = '#ecfdf5';
+        err.style.color = '#065f46';
+        err.style.borderLeft = '4px solid #10b981';
+        err.style.display = 'block';
+      }
+    } else if(result.ok && newIndivCount > 0){
+      // Tout était déjà à jour
+      if(typeof toast === 'function'){
+        toast('✓ Déjà à jour',
+          newIndivCount + ' compte(s) déjà synchronisé(s). Aucune nouvelle donnée à récupérer.',
+          'info');
+      }
+      if(err){
+        err.textContent = '✓ ' + newIndivCount + ' compte(s) membre disponible(s). Saisissez vos identifiants.';
+        err.style.background = '#ecfdf5';
+        err.style.color = '#065f46';
+        err.style.borderLeft = '4px solid #10b981';
+        err.style.display = 'block';
+      }
+    } else {
+      // Échec
+      let msg = '';
+      if(result.reason === 'offline'){
+        msg = 'Hors-ligne. Vérifiez votre connexion Internet.';
+      } else if(result.reason === 'timeout'){
+        msg = 'La récupération a expiré (8s). Réessayez dans un moment.';
+      } else if(result.reason === 'no_indiv_in_cloud' || result.reason === 'no_data'){
+        msg = 'Aucun compte membre n\'a été publié sur le cloud. L\'administrateur doit d\'abord créer votre compte puis le synchroniser.';
+      } else if(result.reason === 'busy'){
+        msg = 'Une synchronisation est déjà en cours. Patientez quelques secondes.';
+      } else {
+        msg = 'Échec de la synchronisation : ' + (result.error || result.reason || 'erreur inconnue');
+      }
+      if(typeof toast === 'function'){
+        toast('Échec de synchronisation', msg, 'warning');
+      }
+      if(err){
+        err.textContent = '⚠️ ' + msg;
+        err.style.background = '#fef2f2';
+        err.style.color = '#991b1b';
+        err.style.borderLeft = '4px solid #dc2626';
+        err.style.display = 'block';
+      }
+    }
+  } catch(e){
+    console.error('[V6.33] manualSyncUsersIndiv error:', e);
+    if(typeof toast === 'function'){
+      toast('Erreur', e.message || String(e), 'error');
+    }
+  } finally {
+    // Restaure le bouton
+    if(btn){
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      btn.innerHTML = originalHTML;
+    }
+  }
+}
+// Expose sur window pour qu'il soit appelable depuis le onclick HTML
+window.manualSyncUsersIndiv = manualSyncUsersIndiv;
+
 function doLogin(){
   const u = document.getElementById('loginUsername').value.trim();
   const p = document.getElementById('loginPassword').value;
@@ -4087,39 +4235,122 @@ function doLogin(){
     // comptes n'ont pas été synchronisés depuis le cloud (le bug V6.31).
     const indivCount = (state.users||[]).filter(x => x.role === 'membre_indiv').length;
     let hint = '';
-    if(indivCount === 0 && (looksLikePhone || looksLikeEmail)){
-      // Cas critique : aucun compte indiv sur cet appareil → on tente un pull du cloud
-      hint = '\n\n⚠️ Aucun compte membre individuel n\'est enregistré sur cet appareil.\n' +
-        'Tentative de synchronisation depuis le cloud en cours…\n\n' +
-        'Si le problème persiste, contactez l\'administrateur pour qu\'il crée (ou re-synchronise) votre compte.';
-      // 🔔 V6.32 : tente un pull silencieux du cloud pour récupérer les comptes membre_indiv
-      // que l'admin a pu créer depuis un autre appareil.
-      if(typeof isCloudConfigured === 'function' && isCloudConfigured() &&
-         typeof isOnline === 'function' && isOnline() &&
-         typeof silentPullFromCloud === 'function'){
-        setTimeout(() => {
-          silentPullFromCloud().then(pulled => {
-            if(pulled){
-              const newIndivCount = (state.users||[]).filter(x => x.role === 'membre_indiv').length;
-              if(newIndivCount > 0){
-                if(typeof toast === 'function'){
-                  toast('👤 Comptes récupérés',
-                    newIndivCount + ' compte(s) membre récupéré(s) depuis le cloud. Vous pouvez maintenant réessayer de vous connecter.',
-                    'success');
-                }
-              } else {
-                if(typeof toast === 'function'){
-                  toast('Aucun compte trouvé',
-                    'Aucun compte membre individuel n\'a été trouvé sur le cloud. L\'administrateur doit d\'abord créer votre compte.',
-                    'warning');
-                }
-              }
-            } else {
-              console.log('[V6.32] silentPullFromCloud n\'a rien récupéré (cloud pas plus récent ou inaccessible)');
-            }
-          }).catch(e => console.warn('[V6.32] silentPull login échoué:', e));
-        }, 200);
+
+    // 🔔 V6.33 : SYNCHRONISATION SYNCHRONE + RECONNEXION AUTOMATIQUE
+    // Au lieu d'afficher "incorrect credentials" et d'espérer que l'utilisateur
+    // comprenne qu'il faut attendre le toast "👤 Nouveaux comptes" puis réessayer,
+    // on attend vraiment que le cloud soit tiré, puis on réessaie automatiquement
+    // la connexion. C'est particulièrement important sur Firefox/Safari où le
+    // silentPull initial peut être lent (plus lent que la frappe de l'utilisateur).
+    //
+    // On ne le fait qu'une seule fois (via le flag _v633SyncRetryDone) pour éviter
+    // une boucle infinie si le cloud ne contient vraiment pas le compte.
+    if(indivCount === 0 && !window._v633SyncRetryDone &&
+       typeof isCloudConfigured === 'function' && isCloudConfigured() &&
+       typeof isOnline === 'function' && isOnline() &&
+       typeof fetchUsersIndivFromCloud === 'function'){
+      // Marque qu'on a déjà tenté la synchro pour cet écran de login
+      window._v633SyncRetryDone = true;
+      // Affiche un message d'attente clair (pas d'erreur)
+      err.innerHTML = '<div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="width:18px;height:18px;border:2px solid #e2e8f0;border-top:2px solid #0f5b45;border-radius:50%;animation:spin 1s linear infinite;flex-shrink:0"></div>' +
+        '<span>☁️ Récupération de vos identifiants depuis le cloud…</span></div>' +
+        '<div style="font-size:11px;color:#64748b;margin-top:6px">Veuillez patienter quelques secondes.</div>';
+      err.style.background = '#eff6ff';
+      err.style.color = '#1e40af';
+      err.style.borderLeft = '4px solid #3b82f6';
+      err.style.display = 'block';
+      // Anime le bouton de connexion pour montrer que quelque chose se passe
+      const loginBtn = document.querySelector('button[data-i18n="login.submit"]');
+      const originalText = loginBtn ? loginBtn.textContent : '';
+      if(loginBtn){
+        loginBtn.disabled = true;
+        loginBtn.style.opacity = '0.6';
+        loginBtn.style.cursor = 'wait';
+        loginBtn.textContent = '⏳ Synchronisation…';
       }
+      // Lance le fetch synchrone (avec timeout interne de 8s)
+      fetchUsersIndivFromCloud().then(result => {
+        // Restore le bouton
+        if(loginBtn){
+          loginBtn.disabled = false;
+          loginBtn.style.opacity = '';
+          loginBtn.style.cursor = '';
+          loginBtn.textContent = originalText;
+        }
+        const newIndivCount = (state.users||[]).filter(x => x.role === 'membre_indiv').length;
+        if(result.ok && newIndivCount > 0){
+          // 🎉 Comptes récupérés ! On retente la connexion automatiquement.
+          if(typeof toast === 'function'){
+            toast('👤 Comptes récupérés',
+              newIndivCount + ' compte(s) membre récupéré(s) depuis le cloud. ' +
+              'Connexion en cours avec vos identifiants…',
+              'success');
+          }
+          // Cache le message d'attente
+          err.style.display = 'none';
+          err.style.background = '';
+          err.style.color = '';
+          err.style.borderLeft = '';
+          // Re-tente la connexion automatiquement (récursif, mais le flag évite la boucle)
+          // Petit délai pour laisser le toast s'afficher
+          setTimeout(() => { try { doLogin(); } catch(e){ console.error('[V6.33] retry doLogin error:', e); } }, 300);
+        } else {
+          // Aucun compte récupéré — affiche le message d'erreur explicatif
+          let reason = result.reason || 'unknown';
+          let msg = '';
+          if(reason === 'offline' || reason === 'not_configured'){
+            msg = '⚠️ La synchronisation cloud n\'est pas disponible. ' +
+                  'Vérifiez votre connexion Internet et réessayez.';
+          } else if(reason === 'timeout'){
+            msg = '⚠️ La récupération depuis le cloud a expiré (8s). ' +
+                  'Vérifiez votre connexion Internet et réessayez, ' +
+                  'ou contactez l\'administrateur.';
+          } else if(reason === 'no_indiv_in_cloud' || reason === 'no_data'){
+            msg = '⚠️ Aucun compte membre individuel n\'a été trouvé sur le cloud.\n\n' +
+                  'L\'administrateur doit d\'abord créer votre compte depuis son appareil, ' +
+                  'puis le synchroniser (push cloud).';
+          } else if(reason === 'busy'){
+            msg = '⚠️ Une synchronisation est déjà en cours. Patientez quelques secondes puis réessayez.';
+          } else {
+            msg = '⚠️ Impossible de récupérer vos identifiants depuis le cloud.\n\n' +
+                  'Vérifiez votre connexion Internet et réessayez. ' +
+                  'Si le problème persiste, contactez l\'administrateur.';
+          }
+          err.textContent = msg;
+          err.style.background = '#fef2f2';
+          err.style.color = '#991b1b';
+          err.style.borderLeft = '4px solid #dc2626';
+          err.style.display = 'block';
+          if(typeof toast === 'function'){
+            toast('Connexion impossible', msg.split('\n')[0], 'warning');
+          }
+        }
+      }).catch(e => {
+        console.error('[V6.33] fetchUsersIndivFromCloud error:', e);
+        if(loginBtn){
+          loginBtn.disabled = false;
+          loginBtn.style.opacity = '';
+          loginBtn.style.cursor = '';
+          loginBtn.textContent = originalText;
+        }
+        err.textContent = '⚠️ Erreur lors de la synchronisation. Réessayez ou contactez l\'administrateur.';
+        err.style.background = '#fef2f2';
+        err.style.color = '#991b1b';
+        err.style.borderLeft = '4px solid #dc2626';
+        err.style.display = 'block';
+      });
+      return; // Sort immédiatement — la reconnexion se fait dans le .then()
+    }
+
+    // 🔔 V6.33 : si on a déjà tenté la synchro (ou si pas cloud configuré),
+    // on affiche les hints V6.30/V6.32 normalement.
+    if(indivCount === 0 && (looksLikePhone || looksLikeEmail)){
+      hint = '\n\n⚠️ Aucun compte membre individuel n\'est enregistré sur cet appareil.\n' +
+        'Si vous venez de tenter une connexion, une synchronisation a déjà été effectuée.\n\n' +
+        'Si le problème persiste, contactez l\'administrateur pour qu\'il crée (ou re-synchronise) votre compte.';
+      // Propose aussi un bouton "Réessayer" en réinitialisant le flag
+      hint += '\n\n💡 Vous pouvez aussi cliquer sur « 🔄 Synchroniser les comptes » sous le bouton de connexion pour forcer une nouvelle tentative.';
     } else if(looksLikeEmail){
       hint = '\n\n💡 Vous avez saisi un email. Vérifiez qu\'il correspond bien à celui enregistré par l\'administrateur, et que le mot de passe est le dernier que vous avez reçu (les réinitialisations génèrent un nouveau mot de passe aléatoire).';
     } else if(looksLikePhone){
@@ -4128,15 +4359,21 @@ function doLogin(){
       hint = '\n\n💡 Pour un compte membre individuel, vous pouvez vous connecter avec :\n  • Votre nom d\'utilisateur\n  • Votre numéro de téléphone\n  • Votre adresse email\n\nSi vous avez oublié votre mot de passe, cliquez sur « Mot de passe oublié ? » ci-dessous.';
     }
     err.textContent = 'Nom d\'utilisateur ou mot de passe incorrect.' + hint;
+    err.style.background = '';
+    err.style.color = '';
+    err.style.borderLeft = '';
     err.style.display = 'block';
     // 📨 V6.30 : log de diagnostic (sans exposer le mot de passe) pour aider le support
-    console.warn('[V6.32] Échec connexion — identifiant saisi:', u,
+    console.warn('[V6.33] Échec connexion — identifiant saisi:', u,
       '| normalizePhone():', normalizePhone(u),
       '| state.users count:', (state.users||[]).length,
       '| membre_indiv accounts:', indivCount,
-      '| cloud configured:', typeof isCloudConfigured === 'function' ? isCloudConfigured() : 'N/A');
+      '| cloud configured:', typeof isCloudConfigured === 'function' ? isCloudConfigured() : 'N/A',
+      '| syncRetryDone:', window._v633SyncRetryDone);
     return;
   }
+  // Si on arrive ici, la connexion a réussi → réinitialise le flag de retry pour la prochaine fois
+  window._v633SyncRetryDone = false;
   err.style.display = 'none';
   // Génère un sessionId unique pour cette session (Task 46) — permet de regrouper
   // toutes les actions effectuées pendant une même session de travail.
@@ -10862,6 +11099,85 @@ function mergeCloudUsersIndiv(cloudUsersIndiv){
   // Reconstruit state.users : non-indiv locaux + indiv locaux (mis à jour) + indiv cloud (nouveaux)
   state.users = [ ...localNonIndiv, ...localIndiv, ...newIndiv ];
   return { added, updated, total: cloudUsersIndiv.length };
+}
+
+// 🔔 V6.33 : Récupère UNIQUEMENT les comptes membre_indiv du cloud, sans remplacer
+// l'état local complet. C'est une version légère de silentPullFromCloud() qui:
+//  - ne remplace PAS state (pas de Object.assign)
+//  - ne déclenche PAS de toast automatique
+//  - ne vérifie PAS le throttle _lastPullCheck (pour permettre un fetch synchrone
+//    pendant le login, même si un silentPull récent a eu lieu)
+//  - ne vérifie PAS si cloud est plus récent que local (on veut toujours les comptes
+//    les plus à jour — c'est l'admin qui pousse, donc le cloud est authoritative)
+//  - utilise un AbortController pour éviter les hangs réseau sur Firefox/Safari
+//  - ne lance PAS de navigateTo() (l'utilisateur est sur l'écran de login)
+// Retourne { ok, added, updated, total, reason }.
+async function fetchUsersIndivFromCloud(){
+  if(!isCloudConfigured()){
+    return { ok: false, added: 0, updated: 0, total: 0, reason: 'not_configured' };
+  }
+  if(!isOnline()){
+    return { ok: false, added: 0, updated: 0, total: 0, reason: 'offline' };
+  }
+  // Évite les appels concurrents
+  if(typeof _syncInProgress !== 'undefined' && _syncInProgress){
+    return { ok: false, added: 0, updated: 0, total: 0, reason: 'busy' };
+  }
+  try {
+    // 🔔 V6.33 : fetchCloudRecord avec timeout explicite (8s) via AbortController.
+    // Sur Firefox/Safari, un fetch vers Supabase peut rester pending indéfiniment
+    // si la connexion réseau est instable. Sans timeout, doLogin() attendrait
+    // indéfiniment et l'utilisateur croirait que l'app est plantée.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const url = `${supabaseUrl(state.sync.table)}?id=eq.${encodeURIComponent(state.sync.recordId)}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: supabaseHeaders(),
+      signal: controller.signal,
+      mode: 'cors',  // explicite pour Firefox/Safari
+    });
+    clearTimeout(timeoutId);
+    if(!res.ok){
+      const txt = await res.text().catch(()=> '');
+      return { ok: false, added: 0, updated: 0, total: 0, reason: 'http_' + res.status, error: txt };
+    }
+    const arr = await res.json();
+    const cloud = (Array.isArray(arr) && arr.length > 0) ? arr[0] : null;
+    if(!cloud || !cloud.data){
+      return { ok: false, added: 0, updated: 0, total: 0, reason: 'no_data' };
+    }
+    const cloudUsersIndiv = Array.isArray(cloud.data.usersIndiv) ? cloud.data.usersIndiv : [];
+    if(cloudUsersIndiv.length === 0){
+      return { ok: false, added: 0, updated: 0, total: 0, reason: 'no_indiv_in_cloud' };
+    }
+    // Fusionne les comptes membre_indiv dans state.users (sans toucher au reste)
+    const result = mergeCloudUsersIndiv(cloudUsersIndiv);
+    if(result.added > 0 || result.updated > 0){
+      // Sauvegarde localement pour les prochaines visites
+      try { saveState(); } catch(e){ console.warn('V6.33: saveState après fetchUsersIndiv échoué:', e); }
+      // Met à jour le timestamp de dernière sync (sans écraser la structure complète)
+      if(state.sync){
+        state.sync.lastSyncAt = Date.now();
+        state.sync.lastPushedBy = cloud.updated_by || state.sync.lastPushedBy;
+        state.sync.lastError = null;
+        if(cloud.updated_at){
+          state.sync.localVersion = new Date(cloud.updated_at).getTime();
+        }
+      }
+      console.log('[V6.33] 👤 Comptes membre_indiv récupérés du cloud (fetch léger) :',
+        result.added, 'nouveau(x),', result.updated, 'mis à jour,', result.total, 'total');
+    }
+    return { ok: true, ...result, reason: 'ok' };
+  } catch(e){
+    // AbortError = timeout déclenché
+    if(e && e.name === 'AbortError'){
+      console.warn('[V6.33] fetchUsersIndivFromCloud: timeout (8s) dépassé');
+      return { ok: false, added: 0, updated: 0, total: 0, reason: 'timeout' };
+    }
+    console.warn('[V6.33] fetchUsersIndivFromCloud error:', e.message || e);
+    return { ok: false, added: 0, updated: 0, total: 0, reason: 'error', error: e.message || String(e) };
+  }
 }
 // Récupère l'état cloud et l'intègre localement (écrase les données locales).
 async function pullFromCloud(force){
