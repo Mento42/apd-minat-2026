@@ -1,0 +1,55 @@
+{
+  "name": "APD-MINAT",
+  "short_name": "APD-MINAT",
+  "description": "Amicale du Personnel Du - MINAT",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f5b45",
+  "theme_color": "#0f5b45",
+  "lang": "fr",
+  "categories": ["productivity", "social", "communication"],
+  "icons": [
+    {
+      "src": "favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Messagerie",
+      "short_name": "Messages",
+      "description": "Ouvrir la messagerie interne",
+      "url": "./index.html#messages",
+      "icons": [{ "src": "favicon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tableau de bord",
+      "short_name": "Accueil",
+      "description": "Ouvrir le tableau de bord",
+      "url": "./index.html#dashboard",
+      "icons": [{ "src": "favicon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
