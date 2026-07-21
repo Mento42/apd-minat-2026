@@ -628,7 +628,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.31</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.32</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -693,7 +693,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.31',
+    'sidebar.version': 'APD-MINAT • Version 6.32',
     'v628.indivTitle': '👤 Comptes membres individuels',
     'v628.indivSubtitle': 'Créez un compte personnel pour chaque membre afin qu\'il puisse discuter en messagerie instantanée. Le membre se connectera avec son numéro de téléphone, son email ou son nom d\'utilisateur.',
     'v628.createIndivBtn': '➕ Créer un compte membre',
@@ -1084,7 +1084,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.31',
+    'sidebar.version': 'APD-MINAT • Version 6.32',
     'v628.indivTitle': '👤 Individual member accounts',
     'v628.indivSubtitle': 'Create a personal account for each member so they can chat in instant messaging. The member will log in with their phone number, email, or username.',
     'v628.createIndivBtn': '➕ Create member account',
@@ -4082,8 +4082,45 @@ function doLogin(){
     // donner un indice plus pertinent.
     const looksLikePhone = /[\d+\s\-()]{6,}/.test(u) && /\d/.test(u);
     const looksLikeEmail = u.includes('@');
+    // 🔔 V6.32 : diagnostic avancé — détecte le cas où AUCUN compte membre_indiv n'existe
+    // sur cet appareil. C'est le cas si l'admin n'a pas encore créé de comptes, OU si les
+    // comptes n'ont pas été synchronisés depuis le cloud (le bug V6.31).
+    const indivCount = (state.users||[]).filter(x => x.role === 'membre_indiv').length;
     let hint = '';
-    if(looksLikeEmail){
+    if(indivCount === 0 && (looksLikePhone || looksLikeEmail)){
+      // Cas critique : aucun compte indiv sur cet appareil → on tente un pull du cloud
+      hint = '\n\n⚠️ Aucun compte membre individuel n\'est enregistré sur cet appareil.\n' +
+        'Tentative de synchronisation depuis le cloud en cours…\n\n' +
+        'Si le problème persiste, contactez l\'administrateur pour qu\'il crée (ou re-synchronise) votre compte.';
+      // 🔔 V6.32 : tente un pull silencieux du cloud pour récupérer les comptes membre_indiv
+      // que l'admin a pu créer depuis un autre appareil.
+      if(typeof isCloudConfigured === 'function' && isCloudConfigured() &&
+         typeof isOnline === 'function' && isOnline() &&
+         typeof silentPullFromCloud === 'function'){
+        setTimeout(() => {
+          silentPullFromCloud().then(pulled => {
+            if(pulled){
+              const newIndivCount = (state.users||[]).filter(x => x.role === 'membre_indiv').length;
+              if(newIndivCount > 0){
+                if(typeof toast === 'function'){
+                  toast('👤 Comptes récupérés',
+                    newIndivCount + ' compte(s) membre récupéré(s) depuis le cloud. Vous pouvez maintenant réessayer de vous connecter.',
+                    'success');
+                }
+              } else {
+                if(typeof toast === 'function'){
+                  toast('Aucun compte trouvé',
+                    'Aucun compte membre individuel n\'a été trouvé sur le cloud. L\'administrateur doit d\'abord créer votre compte.',
+                    'warning');
+                }
+              }
+            } else {
+              console.log('[V6.32] silentPullFromCloud n\'a rien récupéré (cloud pas plus récent ou inaccessible)');
+            }
+          }).catch(e => console.warn('[V6.32] silentPull login échoué:', e));
+        }, 200);
+      }
+    } else if(looksLikeEmail){
       hint = '\n\n💡 Vous avez saisi un email. Vérifiez qu\'il correspond bien à celui enregistré par l\'administrateur, et que le mot de passe est le dernier que vous avez reçu (les réinitialisations génèrent un nouveau mot de passe aléatoire).';
     } else if(looksLikePhone){
       hint = '\n\n💡 Vous avez saisi un numéro de téléphone. Vérifiez que :\n  • Le numéro est bien celui enregistré par l\'administrateur\n  • Le mot de passe est le dernier que vous avez reçu (réinitialisations = nouveau mot de passe aléatoire)\n  • Vous pouvez aussi essayer votre nom d\'utilisateur à la place du téléphone';
@@ -4093,10 +4130,11 @@ function doLogin(){
     err.textContent = 'Nom d\'utilisateur ou mot de passe incorrect.' + hint;
     err.style.display = 'block';
     // 📨 V6.30 : log de diagnostic (sans exposer le mot de passe) pour aider le support
-    console.warn('[V6.30] Échec connexion — identifiant saisi:', u,
+    console.warn('[V6.32] Échec connexion — identifiant saisi:', u,
       '| normalizePhone():', normalizePhone(u),
       '| state.users count:', (state.users||[]).length,
-      '| membre_indiv accounts:', (state.users||[]).filter(x => x.role === 'membre_indiv').length);
+      '| membre_indiv accounts:', indivCount,
+      '| cloud configured:', typeof isCloudConfigured === 'function' ? isCloudConfigured() : 'N/A');
     return;
   }
   err.style.display = 'none';
@@ -4137,13 +4175,47 @@ function doLogin(){
   // 📨 V6.22 : démarre la messagerie instantanée (polling + cross-tab sync)
   try {
     if(typeof setupCrossTabSync === 'function') setupCrossTabSync();
+    // 🔔 V6.31 : seed _msgSeenIds avec tous les IDs de messages existants pour éviter
+    // qu'un flood de notifications ne soit déclenché pour des messages déjà là avant
+    // le login (seuls les VRAIMENT nouveaux messages déclencheront une notification).
+    if(typeof _msgSeenIds !== 'undefined' && Array.isArray(state.messages)){
+      state.messages.forEach(m => { if(m && m.id) _msgSeenIds.add(m.id); });
+      console.log('[V6.31] 📨 _msgSeenIds seedé avec', _msgSeenIds.size, 'message(s) existant(s)');
+    }
     if(typeof startMessagePolling === 'function') startMessagePolling();
     // Pull initial des messages après 2s (pour récupérer les messages récents du cloud)
     setTimeout(() => {
       if(typeof pullMessagesFromCloud === 'function'){
-        pullMessagesFromCloud().catch(()=>{});
+        pullMessagesFromCloud().then(() => {
+          // 🔔 V6.31 : après le pull initial, on seed à nouveau _msgSeenIds avec les
+          // messages récupérés du cloud (pour ne pas notifier les anciens non-lus).
+          if(typeof _msgSeenIds !== 'undefined' && Array.isArray(state.messages)){
+            const beforeSize = _msgSeenIds.size;
+            state.messages.forEach(m => { if(m && m.id) _msgSeenIds.add(m.id); });
+            console.log('[V6.31] 📨 _msgSeenIds re-seedé après pull initial:',
+              _msgSeenIds.size - beforeSize, 'nouveau(x) ID(s) ajouté(s)');
+          }
+        }).catch(()=>{});
       }
     }, 2000);
+    // 🔔 V6.31 : auto-demande de permission de notifications après login (une seule fois)
+    // — seulement si la permission est encore "default" ET qu'on ne l'a jamais demandée
+    // pour cet utilisateur sur cet appareil.
+    setTimeout(() => {
+      try {
+        if(!('Notification' in window)) return;
+        if(Notification.permission !== 'default') return;
+        const askKey = 'apd_notif_asked_for_' + (user.username || 'unknown');
+        if(localStorage.getItem(askKey) === '1') return;  // déjà demandé pour cet user
+        localStorage.setItem(askKey, '1');
+        // Affiche un toast invitant à activer les notifications (au lieu de forcer la permission)
+        if(typeof showNotifPermissionPrompt === 'function'){
+          showNotifPermissionPrompt();
+        } else if(typeof requestNotificationPermission === 'function'){
+          requestNotificationPermission();
+        }
+      } catch(e){ console.warn('[V6.31] notif permission auto-request failed:', e); }
+    }, 4000);
   } catch(e){ console.warn('V6.22: messaging init skipped:', e); }
   // 🌐 V6.3 : si l'utilisateur est un membre (lecture seule), on charge les données publiées (data.json)
   // depuis le serveur (Vercel). Les admins utilisent leurs données locales (IndexedDB).
@@ -10723,9 +10795,18 @@ function buildCloudPayload(){
   delete clone.sync;
   delete clone.currentUser;
   delete clone.activeModule;
-  // Les users ne sont pas synchronisés pour éviter d'écraser les mots de passe locaux
-  // (chaque instance gère ses propres comptes).
-  delete clone.users;
+  // 🔔 V6.32 : On ne synchronise QUE les comptes membre_indiv (créés par l'admin pour les
+  // membres). Les comptes admin et membre (shared) restent locaux car leurs mots de passe
+  // sont des valeurs par défaut sensibles qui ne doivent pas écraser ceux d'autres appareils.
+  // AVANT V6.32 : tous les users étaient supprimés du payload → les comptes membre_indiv
+  // créés par l'admin n'étaient JAMAIS propagés aux autres appareils → les membres ne
+  // pouvaient pas se connecter avec leurs identifiants (téléphone/email + mot de passe).
+  // SOLUTION V6.32 : inclure usersIndiv dans le payload = users.filter(role === 'membre_indiv')
+  // avec toutes leurs infos (username, password, telephone, adresseEmail, membreId, etc.).
+  clone.usersIndiv = Array.isArray(state.users)
+    ? state.users.filter(u => u && u.role === 'membre_indiv').map(u => ({ ...u }))
+    : [];
+  delete clone.users;  // toujours supprimer le tableau users complet
   // Le journal d'audit est local à chaque instance (Task 46) — ne pas synchroniser.
   delete clone.auditLog;
   delete clone.activeSessions;
@@ -10738,6 +10819,49 @@ function buildCloudPayload(){
   // Ne pas synchroniser (sinon un autre utilisateur hérite de mes fichiers en cours).
   delete clone._msgDraftAttachments;
   return clone;
+}
+
+// 🔔 V6.32 : Fusionne les comptes membre_indiv du cloud avec les comptes locaux.
+// RÈGLES :
+//  1. Les comptes locaux admin/membre (shared) sont TOUJOURS préservés (jamais écrasés).
+//  2. Pour les comptes membre_indiv :
+//     - Si un compte local a le même username OU le même membreId qu'un compte cloud,
+//       on prend la version cloud (considérée comme authoritative — c'est l'admin qui pousse).
+//     - Si un compte membre_indiv existe seulement en local, on le garde (l'admin local l'a créé).
+//     - Si un compte membre_indiv existe seulement dans le cloud, on l'ajoute.
+//  3. Retourne le nombre de comptes membre_indiv ajoutés/mis à jour (pour notif utilisateur).
+function mergeCloudUsersIndiv(cloudUsersIndiv){
+  if(!Array.isArray(cloudUsersIndiv) || cloudUsersIndiv.length === 0){
+    return { added: 0, updated: 0, total: 0 };
+  }
+  if(!Array.isArray(state.users)){
+    state.users = [];
+  }
+  let added = 0, updated = 0;
+  const localIndiv = state.users.filter(u => u && u.role === 'membre_indiv');
+  const localNonIndiv = state.users.filter(u => u && u.role !== 'membre_indiv');
+  const newIndiv = [];
+  cloudUsersIndiv.forEach(cloudUser => {
+    if(!cloudUser || !cloudUser.username) return;
+    // Cherche un compte local avec même username (insensible à la casse) OU même membreId
+    const existing = localIndiv.find(u =>
+      (u.username && u.username.toLowerCase() === cloudUser.username.toLowerCase()) ||
+      (u.membreId && cloudUser.membreId && u.membreId === cloudUser.membreId)
+    );
+    if(existing){
+      // Met à jour le compte local avec les infos cloud (password, telephone, email, etc.)
+      // — c'est l'admin qui a poussé la version la plus récente.
+      Object.assign(existing, cloudUser);
+      updated++;
+    } else {
+      // Nouveau compte membre_indiv venu du cloud — on l'ajoute tel quel
+      newIndiv.push({ ...cloudUser });
+      added++;
+    }
+  });
+  // Reconstruit state.users : non-indiv locaux + indiv locaux (mis à jour) + indiv cloud (nouveaux)
+  state.users = [ ...localNonIndiv, ...localIndiv, ...newIndiv ];
+  return { added, updated, total: cloudUsersIndiv.length };
 }
 // Récupère l'état cloud et l'intègre localement (écrase les données locales).
 async function pullFromCloud(force){
@@ -10795,6 +10919,11 @@ async function pullFromCloud(force){
       const db = b.sentAt ? new Date(b.sentAt).getTime() : 0;
       return da - db;
     });
+    // 🔔 V6.32 : capture les comptes membre_indiv du cloud AVANT l'Object.assign
+    // (ils sont dans cloud.data.usersIndiv mais seront perdus après Object.assign car
+    // state.users est préservé — il faut donc les merger manuellement après).
+    const _cloudUsersIndiv = Array.isArray(cloud.data.usersIndiv) ? cloud.data.usersIndiv : [];
+    delete cloud.data.usersIndiv;  // ne pas écraser state.users avec ce champ
     const preserved = {
       sync: state.sync,
       currentUser: state.currentUser,
@@ -10804,6 +10933,18 @@ async function pullFromCloud(force){
       activeSessions: state.activeSessions, // Sessions actives locales (Task 46)
     };
     state = Object.assign({}, cloud.data, preserved);
+    // 🔔 V6.32 : fusionne les comptes membre_indiv du cloud dans state.users
+    const _indivMerge = mergeCloudUsersIndiv(_cloudUsersIndiv);
+    if(_indivMerge.added > 0 || _indivMerge.updated > 0){
+      console.log('[V6.32] 👤 Comptes membre_indiv synchronisés (pull manuel) :',
+        _indivMerge.added, 'nouveau(x),', _indivMerge.updated, 'mis à jour');
+      saveState();
+      if(_indivMerge.added > 0 && typeof toast === 'function'){
+        toast('👤 Nouveaux comptes',
+          _indivMerge.added + ' nouveau(x) compte(s) membre récupéré(s) depuis le cloud. Vous pouvez vous connecter.',
+          'success');
+      }
+    }
     // Met à jour les méta sync
     state.sync.lastSyncAt = Date.now();
     state.sync.lastPushedBy = cloud.updated_by || null;
@@ -10976,6 +11117,9 @@ async function silentPullFromCloud(){
         return da - db;
       });
       cloud.data.messages = mergedMessages;
+      // 🔔 V6.32 : capture les comptes membre_indiv du cloud AVANT l'Object.assign
+      const _cloudUsersIndivSilent = Array.isArray(cloud.data.usersIndiv) ? cloud.data.usersIndiv : [];
+      delete cloud.data.usersIndiv;
       // Préserve les champs locaux (session, users, sync meta)
       const preserved = {
         sync: state.sync,
@@ -10987,6 +11131,17 @@ async function silentPullFromCloud(){
         // 📨 V6.22 : les messages fusionnés sont déjà dans cloud.data.messages
       };
       state = Object.assign({}, cloud.data, preserved);
+      // 🔔 V6.32 : fusionne les comptes membre_indiv du cloud dans state.users
+      const _indivMergeSilent = mergeCloudUsersIndiv(_cloudUsersIndivSilent);
+      if(_indivMergeSilent.added > 0 || _indivMergeSilent.updated > 0){
+        console.log('[V6.32] 👤 Comptes membre_indiv synchronisés (silent pull) :',
+          _indivMergeSilent.added, 'nouveau(x),', _indivMergeSilent.updated, 'mis à jour');
+        if(_indivMergeSilent.added > 0 && typeof toast === 'function'){
+          toast('👤 Nouveaux comptes',
+            _indivMergeSilent.added + ' nouveau(x) compte(s) membre récupéré(s) depuis le cloud. Vous pouvez vous connecter.',
+            'success');
+        }
+      }
       // Met à jour les méta sync
       state.sync.lastSyncAt = Date.now();
       state.sync.lastPushedBy = cloud.updated_by || null;
@@ -11620,18 +11775,30 @@ async function pullMessagesFromCloud(){
 //  - 1500ms quand sur le module messages (discussion ouverte)
 //  - 4000ms sinon (idle, en arrière-plan)
 // + BroadcastChannel pour sync cross-tab instantanée (cf. setupCrossTabSync).
+// 📨 V6.31 : polling RAPIDE pour messagerie vraiment instantanée + notifications WhatsApp-style.
+//  - 1500ms quand sur le module messages (discussion ouverte)
+//  - 4000ms quand l'app est ouverte mais pas sur messages
+//  - 8000ms quand l'onglet est caché (background) — PRIMORDIAL pour les notifications :
+//    si on ne poll pas en arrière-plan, on ne détecte jamais les nouveaux messages
+//    et donc aucune notification n'est jamais déclenchée !
+// + BroadcastChannel pour sync cross-tab instantanée (cf. setupCrossTabSync).
 function startMessagePolling(){
   stopMessagePolling();
   if(!isCloudConfigured()) return;
-  const interval = (state.activeModule === 'messages') ? 1500 : 4000;
+  // 🔔 V6.31 : calcule l'intervalle selon l'état actif/background
+  // On utilise une fonction dynamique car l'état peut changer en cours de session.
   _msgFastPollTimer = setInterval(() => {
     if(!isOnline()) return;
-    if(document.hidden && state.activeModule !== 'messages') return;
+    // 🔔 V6.31 : ne plus sauter le poll quand l'onglet est caché — c'est précisément
+    // en arrière-plan qu'on a BESOIN de détecter les nouveaux messages pour notifier.
+    // (Les navigateurs throttleront naturellement à ~1/min, c'est OK pour les notifs.)
     pullMessagesFromCloud().catch(()=>{});
-    // 📨 V6.27 : récupère aussi les typing indicators
-    if(typeof pullTypingFromCloud === 'function') pullTypingFromCloud().catch(()=>{});
-  }, interval);
-  console.log('📨 V6.27: instant message polling démarré (', interval/1000, 's )');
+    // 📨 V6.27 : récupère aussi les typing indicators (uniquement si onglet visible)
+    if(!document.hidden && typeof pullTypingFromCloud === 'function'){
+      pullTypingFromCloud().catch(()=>{});
+    }
+  }, 4000);  // intervalle de base 4s (le navigateur throttlera à ~1/min en background)
+  console.log('📨 V6.31: message polling démarré (background-safe, notifications actives)');
 }
 function stopMessagePolling(){
   if(_msgFastPollTimer){
@@ -11856,6 +12023,100 @@ function requestNotificationPermission(){
     toast('Notifications bloquées',
       'Les notifications sont bloquées dans votre navigateur. Modifiez les paramètres du site pour les autoriser.',
       'warning');
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 🔔 V6.31 : Bannière de demande de permission non-intrusive
+//  • Affiche une bannière en bas de l'écran (au lieu de déclencher
+//    immédiatement la popup native du navigateur)
+//  • Bouton "Activer" → déclenche la demande native
+//  • Bouton "Plus tard" → dismiss sans demander
+//  • Détection iOS Safari → message "Ajouter à l'écran d'accueil" requis
+//  • Dismissible (ne réapparaît plus pour cet utilisateur)
+// ════════════════════════════════════════════════════════════════
+function showNotifPermissionPrompt(){
+  try {
+    if(!('Notification' in window)) return;  // navigateur non compatible
+    if(Notification.permission !== 'default') return;  // déjà demandé
+    // Évite d'afficher 2 fois
+    if(document.getElementById('notifPermissionBanner')) return;
+    // Détecte iOS Safari (pas de Web Push natif sans installation PWA)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+    const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                      || (window.navigator && window.navigator.standalone === true);
+    // Construit le message selon le navigateur
+    let title = '🔔 Activez les notifications WhatsApp-style';
+    let body = 'Recevez une notification sur votre appareil à chaque nouveau message reçu, comme sur WhatsApp ou Telegram.';
+    let cta = 'Activer les notifications';
+    let iosHint = '';
+    if(isIOS && !isStandalone){
+      // Sur iOS, il faut d'abord "Ajouter à l'écran d'accueil"
+      title = '🔔 Notifications sur iPhone';
+      body = 'Sur iPhone, ajoutez d\'abord APD-MINAT à votre écran d\'accueil :<br>'+
+             '<br>1. Appuyez sur le bouton <b>Partager</b> 📤 en bas de Safari<br>'+
+             '2. Choisissez <b>"Sur l\'écran d\'accueil"</b><br>'+
+             '3. Ouvrez APD-MINAT depuis l\'icône créée<br>'+
+             '4. Autorisez ensuite les notifications quand demandé';
+      cta = 'J\'ai compris';
+      iosHint = '<div style="margin-top:8px;font-size:11px;opacity:0.85">Astuce : l\'icône 📤 se trouve en bas de Safari (carré avec flèche vers le haut).</div>';
+    }
+    // Construit la bannière
+    const banner = document.createElement('div');
+    banner.id = 'notifPermissionBanner';
+    banner.style.cssText = [
+      'position:fixed','bottom:0','left:0','right:0','z-index:99999',
+      'background:linear-gradient(135deg,#0f5b45,#15803d)',
+      'color:#fff','padding:14px 16px','box-shadow:0 -4px 20px rgba(0,0,0,0.25)',
+      'font-family:inherit','font-size:13px','display:flex','flex-direction:column','gap:8px',
+      'animation:slideUpBanner 0.4s ease-out'
+    ].join(';');
+    banner.innerHTML =
+      '<div style="display:flex;align-items:flex-start;gap:10px">'+
+        '<div style="font-size:24px;line-height:1">🔔</div>'+
+        '<div style="flex:1">'+
+          '<div style="font-weight:700;font-size:14px;margin-bottom:4px">'+title+'</div>'+
+          '<div style="line-height:1.4;opacity:0.95">'+body+'</div>'+
+          iosHint+
+        '</div>'+
+        '<button id="notifBannerClose" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 4px;line-height:1" title="Fermer">×</button>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+        '<button id="notifBannerDismiss" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">Plus tard</button>'+
+        '<button id="notifBannerAccept" style="background:#fff;color:#0f5b45;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px">'+cta+'</button>'+
+      '</div>';
+    // Animation CSS (injectée une seule fois)
+    if(!document.getElementById('notifBannerStyle')){
+      const s = document.createElement('style');
+      s.id = 'notifBannerStyle';
+      s.textContent = '@keyframes slideUpBanner{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}';
+      document.head.appendChild(s);
+    }
+    document.body.appendChild(banner);
+    // Handlers
+    const close = () => { try { banner.remove(); } catch(_){} };
+    document.getElementById('notifBannerClose').onclick = close;
+    document.getElementById('notifBannerDismiss').onclick = close;
+    document.getElementById('notifBannerAccept').onclick = () => {
+      close();
+      if(isIOS && !isStandalone){
+        // Sur iOS non-installé, on affiche juste un toast de rappel
+        toast('📱 iPhone', 'Ajoutez APD-MINAT à votre écran d\'accueil (bouton Partager 📤 → Sur l\'écran d\'accueil), puis rouvrez-le depuis l\'icône pour activer les notifications.', 'info');
+        return;
+      }
+      // Sur les autres navigateurs : déclenche la demande native
+      if(typeof requestNotificationPermission === 'function'){
+        requestNotificationPermission();
+      }
+    };
+    console.log('[V6.31] 🔔 Bannière de demande de permission affichée');
+  } catch(e){
+    console.warn('[V6.31] showNotifPermissionPrompt error:', e);
+    // Fallback : demande directe
+    if(typeof requestNotificationPermission === 'function'){
+      requestNotificationPermission();
+    }
   }
 }
 
@@ -12273,6 +12534,7 @@ window.toggleMessageSound = toggleMessageSound;
 window.isMessageSoundOff = isMessageSoundOff;
 window.requestNotificationPermission = requestNotificationPermission;
 window.showBrowserNotificationForMessage = showBrowserNotificationForMessage;
+window.showNotifPermissionPrompt = showNotifPermissionPrompt;
 window.getMessageSenderLabel = getMessageSenderLabel;
 window.updateNotificationStatusBadge = updateNotificationStatusBadge;
 window.setupCrossTabSync = setupCrossTabSync;
@@ -13350,6 +13612,29 @@ function saveCreateIndividualMember(){
   };
   state.users.push(newUser);
   saveState();
+  // 🔔 V6.32 : pousse immédiatement les comptes membre_indiv vers le cloud pour que
+  // le membre puisse se connecter depuis son propre appareil SANS attendre la prochaine
+  // synchro manuelle. Sans ce push, le compte reste invisible aux autres appareils.
+  if(typeof isCloudConfigured === 'function' && isCloudConfigured() && typeof isOnline === 'function' && isOnline()){
+    setTimeout(() => {
+      try {
+        if(typeof pushToCloud === 'function'){
+          pushToCloud(true).then(r => {
+            if(r && r.ok){
+              console.log('[V6.32] ✅ Compte membre_indiv poussé vers le cloud automatiquement');
+              if(typeof toast === 'function'){
+                setTimeout(() => toast('☁️ Compte synchronisé',
+                  'Le compte de ' + fullName + ' est désormais accessible depuis n\'importe quel appareil.',
+                  'success'), 1500);
+              }
+            }
+          }).catch(e => console.warn('[V6.32] Auto-push compte indiv échoué:', e));
+        }
+      } catch(e){ console.warn('[V6.32] auto-push exception:', e); }
+    }, 800);
+  } else {
+    console.log('[V6.32] Cloud non configuré ou hors-ligne — compte créé localement seulement. Pensez à synchroniser manuellement.');
+  }
   // Log audit
   if(typeof logAudit === 'function'){
     logAudit('create', 'users', 'Compte individuel ' + getMemberFullName(m), 'Création du compte membre_indiv @' + f.username + ' lié à ' + getMemberFullName(m), null, newUser);
@@ -13399,6 +13684,27 @@ function resetIndividualPassword(userId){
   user.password = newPwd;
   user.mustChangePassword = true;
   saveState();
+  // 🔔 V6.32 : pousse le nouveau mot de passe vers le cloud pour que le membre puisse
+  // se connecter avec le NOUVEAU mot de passe depuis son appareil (sans cela, l'ancien
+  // mot de passe resterait actif sur l'appareil du membre).
+  if(typeof isCloudConfigured === 'function' && isCloudConfigured() && typeof isOnline === 'function' && isOnline()){
+    setTimeout(() => {
+      try {
+        if(typeof pushToCloud === 'function'){
+          pushToCloud(true).then(r => {
+            if(r && r.ok){
+              console.log('[V6.32] ✅ Mot de passe réinitialisé poussé vers le cloud');
+              if(typeof toast === 'function'){
+                setTimeout(() => toast('☁️ Mot de passe synchronisé',
+                  'Le nouveau mot de passe de ' + fullName + ' est actif sur tous les appareils.',
+                  'success'), 1500);
+              }
+            }
+          }).catch(e => console.warn('[V6.32] Auto-push reset MDP échoué:', e));
+        }
+      } catch(e){ console.warn('[V6.32] auto-push exception:', e); }
+    }, 800);
+  }
   if(typeof logAudit === 'function'){
     logAudit('update', 'users', 'Mot de passe réinitialisé — ' + fullName, 'Réinitialisation MDP du compte membre_indiv @' + user.username, null, { password: '***', mustChangePassword: true });
   }
