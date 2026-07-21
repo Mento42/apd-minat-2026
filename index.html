@@ -561,6 +561,15 @@
 }
 
 </style>
+<!-- 📱 V6.31 PWA: manifest + theme-color + iOS meta tags for installable app
+     with home-screen notifications (Android Chrome + iOS 16.4+ Safari) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f5b45">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="APD-MINAT">
+<link rel="apple-touch-icon" href="favicon-192.png">
 </head>
 <body>
 
@@ -614,10 +623,12 @@
         <div id="sidebarUser">Connecté: <strong>admin</strong></div>
         <div id="sidebarSyncStatus" class="sidebar-sync-status sync-offline" onclick="manualRefreshData()" title="Toucher pour rafraîchir"><span class="sync-dot"></span><span id="syncStatusText">Sync: en attente…</span></div>
         <button id="sidebarRefreshBtn" class="sidebar-refresh-btn" onclick="manualRefreshData()" title="Rafraîchir les données maintenant"><span class="refresh-icon">⟳</span><span>Rafraîchir les données</span></button>
+        <!-- 🔔 V6.31 : Bouton notifications WhatsApp-style -->
+        <button id="sidebarNotifBtn" class="sidebar-refresh-btn" onclick="requestNotificationPermission()" title="Activer les notifications pour les nouveaux messages" style="margin-top:6px"><span class="refresh-icon">🔔</span><span id="notifStatusBadge" style="font-size:11px">Notifications…</span></button>
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.30</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.31</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -682,7 +693,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.30',
+    'sidebar.version': 'APD-MINAT • Version 6.31',
     'v628.indivTitle': '👤 Comptes membres individuels',
     'v628.indivSubtitle': 'Créez un compte personnel pour chaque membre afin qu\'il puisse discuter en messagerie instantanée. Le membre se connectera avec son numéro de téléphone, son email ou son nom d\'utilisateur.',
     'v628.createIndivBtn': '➕ Créer un compte membre',
@@ -1073,7 +1084,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.30',
+    'sidebar.version': 'APD-MINAT • Version 6.31',
     'v628.indivTitle': '👤 Individual member accounts',
     'v628.indivSubtitle': 'Create a personal account for each member so they can chat in instant messaging. The member will log in with their phone number, email, or username.',
     'v628.createIndivBtn': '➕ Create member account',
@@ -2809,6 +2820,10 @@ function updateSidebarUserDisplay(){
       </div>
     </div>
   `;
+  // 📨 V6.31 : met à jour le badge de statut des notifications après chaque rendu sidebar
+  if(typeof updateNotificationStatusBadge === 'function'){
+    setTimeout(updateNotificationStatusBadge, 100);
+  }
 }
 
 let _lastSaveError = null;
@@ -11448,6 +11463,7 @@ let _msgFastPollTimer = null;
 let _msgLastSeenCount = 0;
 let _msgLastPollAt = 0;
 let _msgBroadcastChannel = null;  // BroadcastChannel pour sync cross-tab
+let _msgSeenIds = new Set();  // 📨 V6.31 : IDs de messages déjà notifiés (évite les doublons de notifications)
 
 // Pousse UNIQUEMENT les messages vers le cloud (merge avec l'existant).
 // Appelé automatiquement après sendReply() / sendNewMessage().
@@ -11642,13 +11658,33 @@ function onNewMessagesReceived(count){
     const myUnread = (state.messages||[]).filter(m =>
       m.to === state.currentUser.username &&
       !(m.readBy||[]).includes(state.currentUser.username)
-    ).length;
-    if(myUnread > 0 && myUnread > _msgLastSeenCount){
+    );
+    // 📨 V6.31 : notifications WhatsApp-style par message (au lieu d'un générique "X nouveaux messages")
+    // On identifie les messages NOUVEAUX = ceux dont l'ID n'est pas dans _msgSeenIds
+    const newOnes = myUnread.filter(m => m && m.id && !_msgSeenIds.has(m.id));
+    if(newOnes.length > 0){
       playMessageSound();
-      // Notification navigateur si permise
-      showBrowserNotification(myUnread - _msgLastSeenCount);
+      // 🔔 V6.31 : affiche une notification par nouveau message (max 3 pour éviter le spam)
+      // en arrière-plan. Si l'utilisateur est déjà sur la conversation avec l'expéditeur,
+      // on ne notifie pas (pour éviter le bruit).
+      const isOnMessagesModule = state.activeModule === 'messages';
+      const currentConvoUser = state._msgViewUser;
+      newOnes.slice(0, 3).forEach(m => {
+        // Ne pas notifier si l'utilisateur consulte déjà cette conversation
+        if(isOnMessagesModule && currentConvoUser === m.from) return;
+        const senderLabel = (typeof getMessageSenderLabel === 'function')
+          ? getMessageSenderLabel(m)
+          : m.from;
+        showBrowserNotificationForMessage(m, senderLabel);
+      });
+      // Marque tous les messages nouvellement reçus comme "vus" pour les notifications
+      newOnes.forEach(m => _msgSeenIds.add(m.id));
     }
-    _msgLastSeenCount = myUnread;
+    // Compatibilité : garde l'ancien compteur pour le son (mais n'envoie plus la notif générique)
+    if(myUnread.length > 0 && myUnread.length > _msgLastSeenCount && newOnes.length === 0){
+      // Pas de nouveaux messages (juste un recount) — pas de notification
+    }
+    _msgLastSeenCount = myUnread.length;
   }
 }
 
@@ -11681,7 +11717,90 @@ function playMessageSound(){
   } catch(e){ /* silent */ }
 }
 
-// Notification navigateur (Notification API)
+// ════════════════════════════════════════════════════════════════
+// 🔔 V6.31 : Notifications WhatsApp/Telegram-style
+//  • Per-message notifications (sender name + message preview)
+//  • Works in background tabs via Service Worker
+//  • Click → opens the conversation
+//  • Vibration pattern (Android)
+//  • Tag per message ID (prevents duplicates)
+//  • Falls back to direct Notification API if SW unavailable
+// ════════════════════════════════════════════════════════════════
+
+// Affiche une notification WhatsApp-style pour un message donné.
+// @param msg : objet message { id, from, to, subject, body, sentAt }
+// @param senderLabel : nom affichable de l'expéditeur (ex: "ADAMA AYI")
+async function showBrowserNotificationForMessage(msg, senderLabel){
+  try {
+    if(!('Notification' in window)) return;
+    if(Notification.permission !== 'granted') return;
+    const isFr = (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'fr') ||
+                (typeof CURRENT_LANG === 'undefined');
+    // Prépare le titre et le corps (style WhatsApp)
+    const sender = senderLabel || msg.from || (isFr ? 'Inconnu' : 'Unknown');
+    const title = '💬 ' + sender;
+    let body = '';
+    if(msg.subject){
+      body = msg.subject + (msg.body ? ' — ' + msg.body.substring(0, 80) : '');
+    } else {
+      body = msg.body ? msg.body.substring(0, 100) : (isFr ? '📎 Pièce jointe' : '📎 Attachment');
+    }
+    // Tag unique par message (évite les doublons si le SW renvoie la même notif)
+    const tag = 'apdminat-msg-' + (msg.id || (msg.sentAt + '_' + msg.from));
+    // Data pour le click → ouvrir la conversation avec l'expéditeur
+    const notifData = {
+      url: '/',
+      conversationUser: msg.from,
+      messageId: msg.id,
+    };
+    // Tente d'utiliser le Service Worker (notifications fonctionnent si onglet caché)
+    if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+      try {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'show-notification',
+          title: title,
+          body: body,
+          tag: tag,
+          data: notifData,
+          icon: '/favicon-192.png',
+          badge: '/favicon-192.png',
+          requireInteraction: false,
+        });
+        console.log('[V6.31] 📨 Notification envoyée via SW:', title);
+        return;
+      } catch(e){
+        console.warn('[V6.31] SW postMessage failed, fallback to direct Notification:', e);
+      }
+    }
+    // Fallback : Notification directe (fonctionne uniquement si onglet actif)
+    const n = new Notification(title, {
+      body: body,
+      icon: '/favicon-192.png',
+      badge: '/favicon-192.png',
+      tag: tag,
+      data: notifData,
+      vibrate: [200, 100, 200],
+      requireInteraction: false,
+    });
+    n.onclick = () => {
+      window.focus();
+      try {
+        if(typeof state !== 'undefined'){
+          state._msgViewUser = msg.from;
+          state._msgNewConvo = false;
+        }
+        if(typeof navigateTo === 'function') navigateTo('messages');
+      } catch(e){}
+      n.close();
+    };
+    setTimeout(() => n.close(), 10000);
+    console.log('[V6.31] 📨 Notification directe affichée:', title);
+  } catch(e) {
+    console.warn('[V6.31] showBrowserNotificationForMessage error:', e);
+  }
+}
+
+// Notification navigateur (Notification API) — ancienne API gardée pour compat.
 async function showBrowserNotification(count){
   try {
     if(!('Notification' in window)) return;
@@ -11695,7 +11814,7 @@ async function showBrowserNotification(count){
     const body = isFr ? 'Cliquez pour ouvrir la messagerie' : 'Click to open messaging';
     const n = new Notification(title, {
       body: body,
-      icon: '/favicon.ico',
+      icon: '/favicon-192.png',
       tag: 'apdminat-message',
     });
     n.onclick = () => {
@@ -11712,8 +11831,65 @@ function requestNotificationPermission(){
   if(!('Notification' in window)) return;
   if(Notification.permission === 'default'){
     Notification.requestPermission().then(p => {
-      console.log('📨 V6.22: notification permission =', p);
+      console.log('[V6.31] 📨 Notification permission =', p);
+      if(p === 'granted'){
+        toast('🔔 Notifications activées',
+          'Vous recevrez une notification sur votre appareil à chaque nouveau message.',
+          'success');
+        // Affiche une notification de bienvenue pour confirmer
+        setTimeout(() => {
+          showBrowserNotificationForMessage(
+            { id: 'welcome', from: 'admin', body: 'Notifications activées avec succès !', subject: '', sentAt: new Date().toISOString() },
+            'APD-MINAT'
+          );
+        }, 500);
+        updateNotificationStatusBadge();
+      } else if(p === 'denied'){
+        toast('Notifications bloquées',
+          'Vous avez refusé les notifications. Vous pouvez les réactiver dans les paramètres du navigateur.',
+          'warning');
+      }
     });
+  } else if(Notification.permission === 'granted'){
+    toast('🔔 Notifications déjà activées', 'Aucune action nécessaire.', 'info');
+  } else {
+    toast('Notifications bloquées',
+      'Les notifications sont bloquées dans votre navigateur. Modifiez les paramètres du site pour les autoriser.',
+      'warning');
+  }
+}
+
+// Retourne le libellé affichable de l'expéditeur d'un message.
+function getMessageSenderLabel(msg){
+  if(!msg || !msg.from) return 'Inconnu';
+  if(msg.from === 'admin') return 'Administrateur technique';
+  if(msg.from === 'membre') return 'Membre (compte commun)';
+  if(typeof getUserDisplayLabel === 'function'){
+    // getUserDisplayLabel retourne "👤 ..." — on retire le préfixe
+    const lbl = getUserDisplayLabel(msg.from);
+    return lbl.replace(/^[👤👥🔧]\s*/, '');
+  }
+  return msg.from;
+}
+
+// Met à jour le badge de statut des notifications dans la sidebar.
+function updateNotificationStatusBadge(){
+  const el = document.getElementById('notifStatusBadge');
+  if(!el) return;
+  if(!('Notification' in window)){
+    el.innerHTML = '🔕 Notifications non supportées';
+    el.style.color = '#94a3b8';
+    return;
+  }
+  if(Notification.permission === 'granted'){
+    el.innerHTML = '🔔 Notifications activées';
+    el.style.color = '#10b981';
+  } else if(Notification.permission === 'denied'){
+    el.innerHTML = '🔕 Notifications bloquées (modifiez les paramètres du navigateur)';
+    el.style.color = '#dc2626';
+  } else {
+    el.innerHTML = '🔕 Notifications non activées (cliquez pour activer)';
+    el.style.color = '#92400e';
   }
 }
 
@@ -12096,6 +12272,9 @@ window.refreshMessagePollingInterval = refreshMessagePollingInterval;
 window.toggleMessageSound = toggleMessageSound;
 window.isMessageSoundOff = isMessageSoundOff;
 window.requestNotificationPermission = requestNotificationPermission;
+window.showBrowserNotificationForMessage = showBrowserNotificationForMessage;
+window.getMessageSenderLabel = getMessageSenderLabel;
+window.updateNotificationStatusBadge = updateNotificationStatusBadge;
 window.setupCrossTabSync = setupCrossTabSync;
 
 
@@ -14248,6 +14427,65 @@ document.getElementById('loginUsername').addEventListener('keypress', e => { if(
   <span class="fab-icon">⟳</span>
   <span class="fab-badge"></span>
 </button>
+
+<!-- 🔔 V6.31 : Service Worker registration for WhatsApp/Telegram-style notifications.
+     The SW is a separate file (sw.js) deployed alongside the HTML.
+     - If sw.js is missing (e.g. file:// or dev server without sw.js), registration
+       silently fails and we fall back to direct Notification API calls.
+     - If successful, the SW handles `push`, `notificationclick`, and `message` events
+       so notifications work even when the tab is in the background. -->
+<script>
+(function(){
+  if(!('serviceWorker' in navigator)){
+    console.info('[V6.31] Service Worker not supported — falling back to direct Notifications');
+    return;
+  }
+  // Only register on http/https (file:// protocol doesn't allow SWs)
+  if(location.protocol !== 'http:' && location.protocol !== 'https:'){
+    console.info('[V6.31] SW skipped — file:// protocol not supported. Deploy on https:// for notifications.');
+    return;
+  }
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js')
+      .then(function(reg){
+        console.log('[V6.31] ✅ Service Worker registered:', reg.scope);
+        // Force activate immediately (in case a new SW version is waiting)
+        if(reg.waiting){
+          reg.waiting.postMessage({ type: 'skip-waiting' });
+        }
+        // Try to enable periodic sync (Chrome/Edge + PWA installed)
+        if('periodicSync' in reg){
+          reg.periodicSync.register('check-new-messages', {
+            minInterval: 60 * 60 * 1000, // 1 hour (browser may enforce longer)
+          }).then(function(){
+            console.log('[V6.31] 🔄 Periodic Background Sync registered');
+          }).catch(function(e){
+            console.info('[V6.31] Periodic sync not available (requires PWA install):', e.message);
+          });
+        }
+      })
+      .catch(function(err){
+        console.warn('[V6.31] ⚠️ SW registration failed (sw.js missing or wrong scope):', err.message);
+      });
+
+    // Listen for navigation messages from the SW (notification click)
+    navigator.serviceWorker.addEventListener('message', function(event){
+      var data = event.data || {};
+      if(data.type === 'navigate-to-messages' && typeof navigateTo === 'function'){
+        navigateTo('messages');
+      } else if(data.type === 'navigate-to-conversation' && typeof navigateTo === 'function'){
+        try {
+          if(typeof state !== 'undefined'){
+            state._msgViewUser = data.conversationUser;
+            state._msgNewConvo = false;
+          }
+          navigateTo('messages');
+        } catch(e){ console.warn('[V6.31] navigate-to-conversation error:', e); }
+      }
+    });
+  });
+})();
+</script>
 
 </body>
 </html>
