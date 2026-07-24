@@ -642,7 +642,7 @@
         <button class="btn btn-ghost" style="color:#a7f3d0;margin-top:8px;width:100%;justify-content:flex-start" onclick="doLogout()" data-i18n="sidebar.logout">↩ Se déconnecter</button>
         <button class="lang-toggle btn btn-ghost" onclick="setLanguage(CURRENT_LANG==='fr'?'en':'fr')" style="color:#a7f3d0;margin-top:4px;width:100%;justify-content:center;font-weight:600;font-size:11px;border:1px solid rgba(167,243,208,0.2)" title="Switch language">EN</button>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(167,243,208,0.15);font-size:10px;color:rgba(167,243,208,0.55);text-align:center;letter-spacing:0.3px">
-          <span data-i18n="sidebar.version">APD-MINAT • Version 6.33</span><br>
+          <span data-i18n="sidebar.version">APD-MINAT • Version 6.34</span><br>
           <span style="opacity:0.7" data-i18n="sidebar.copyright">© 2026 — Amicale DICRP/MINAT</span>
         </div>
       </div>
@@ -708,7 +708,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': "Dignité – Fraternité – Solidarité",
     'sidebar.logout': '↩ Se déconnecter',
     'sidebar.connected': 'Connecté:',
-    'sidebar.version': 'APD-MINAT • Version 6.33',
+    'sidebar.version': 'APD-MINAT • Version 6.34',
     'v628.indivTitle': '👤 Comptes membres individuels',
     'v628.indivSubtitle': 'Créez un compte personnel pour chaque membre afin qu\'il puisse discuter en messagerie instantanée. Le membre se connectera avec son numéro de téléphone, son email ou son nom d\'utilisateur.',
     'v628.createIndivBtn': '➕ Créer un compte membre',
@@ -1100,7 +1100,7 @@ const TRANSLATIONS = {
     'sidebar.slogan': 'Dignity – Fraternity – Solidarity',
     'sidebar.logout': '↩ Log out',
     'sidebar.connected': 'Logged in:',
-    'sidebar.version': 'APD-MINAT • Version 6.33',
+    'sidebar.version': 'APD-MINAT • Version 6.34',
     'v628.indivTitle': '👤 Individual member accounts',
     'v628.indivSubtitle': 'Create a personal account for each member so they can chat in instant messaging. The member will log in with their phone number, email, or username.',
     'v628.createIndivBtn': '➕ Create member account',
@@ -7229,29 +7229,63 @@ function openAssemblyDialog(id){
   editingAssemblyId = id || null;
   const a = id ? state.assemblies.find(x=>x.id===id) : null;
   assemblyForm = a ? {...a} : { date:new Date().toISOString().split('T')[0], heureDebut:ASSEMBLEE_HEURE_DEBUT, heureFin:ASSEMBLEE_HEURE_FIN, lieu:'', ordreDuJour:'', statut:'Planifiée' };
+  // 🔧 V6.34 : oninput (au lieu de onchange uniquement) — déclenchement IMMÉDIAT à chaque frappe.
+  // PROBLÈME : onchange ne se déclenche qu'à la perte de focus (blur). Sur certains navigateurs
+  // (Firefox, Safari, Edge, mobiles), le blur peut arriver APRÈS le click sur "Modifier".
+  // Résultat : assemblyForm.ordreDuJour restait à l'ANCIENNE valeur, et saveAssembly() écrasait
+  // l'assemblée avec l'ancienne valeur → l'utilisateur avait l'impression que "la modification
+  // était refusée" alors qu'elle était silencieusement perdue.
+  // SOLUTION :
+  //   1) oninput capture la valeur à CHAQUE frappe (immédiat, fiable sur tous navigateurs).
+  //   2) onchange est conservé en secours pour les select/inputs natifs.
+  //   3) Des IDs sont ajoutés pour permettre à saveAssembly() de relire les valeurs du DOM
+  //      comme ceinture+bretelles, au cas où l'événement oninput n'aurait pas eu le temps de fire.
+  //   4) Le textarea passe de 4 à 6 lignes pour faciliter l'édition d'un long ordre du jour.
   const body = `
     <div class="form-row">
-      <div class="form-group"><label>Date</label><input type="date" value="${assemblyForm.date}" onchange="assemblyForm.date=this.value"></div>
-      <div class="form-group"><label>Statut</label><select onchange="assemblyForm.statut=this.value">
+      <div class="form-group"><label>Date</label><input type="date" id="assemblyFormDate" value="${assemblyForm.date}" oninput="assemblyForm.date=this.value" onchange="assemblyForm.date=this.value"></div>
+      <div class="form-group"><label>Statut</label><select id="assemblyFormStatut" oninput="assemblyForm.statut=this.value" onchange="assemblyForm.statut=this.value">
         ${['Planifiée','En cours','Terminée'].map(s=>`<option ${assemblyForm.statut===s?'selected':''}>${s}</option>`).join('')}
       </select></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Heure début</label><input type="time" value="${assemblyForm.heureDebut}" onchange="assemblyForm.heureDebut=this.value"></div>
-      <div class="form-group"><label>Heure fin</label><input type="time" value="${assemblyForm.heureFin}" onchange="assemblyForm.heureFin=this.value"></div>
+      <div class="form-group"><label>Heure début</label><input type="time" id="assemblyFormHeureDebut" value="${assemblyForm.heureDebut}" oninput="assemblyForm.heureDebut=this.value" onchange="assemblyForm.heureDebut=this.value"></div>
+      <div class="form-group"><label>Heure fin</label><input type="time" id="assemblyFormHeureFin" value="${assemblyForm.heureFin}" oninput="assemblyForm.heureFin=this.value" onchange="assemblyForm.heureFin=this.value"></div>
     </div>
-    <div class="form-group"><label>Lieu</label><input value="${escapeHtml(assemblyForm.lieu||'')}" onchange="assemblyForm.lieu=this.value"></div>
-    <div class="form-group"><label>Ordre du jour</label><textarea rows="4" onchange="assemblyForm.ordreDuJour=this.value">${escapeHtml(assemblyForm.ordreDuJour||'')}</textarea></div>
+    <div class="form-group"><label>Lieu</label><input id="assemblyFormLieu" value="${escapeHtml(assemblyForm.lieu||'')}" oninput="assemblyForm.lieu=this.value" onchange="assemblyForm.lieu=this.value"></div>
+    <div class="form-group"><label>Ordre du jour</label><textarea rows="6" id="assemblyFormOrdreDuJour" oninput="assemblyForm.ordreDuJour=this.value" onchange="assemblyForm.ordreDuJour=this.value">${escapeHtml(assemblyForm.ordreDuJour||'')}</textarea></div>
   `;
   const footer = `<button class="btn btn-secondary" onclick="closeModal()">Annuler</button><button class="btn btn-primary" onclick="saveAssembly()">${id?'Modifier':'Enregistrer'}</button>`;
   openModal(id?'<span>✏</span> Modifier Assemblée':'<span>➕</span> Nouvelle Assemblée', body, footer);
 }
 function saveAssembly(){
+  // 🔧 V6.34 : CEINTURE+BRETELLES — relit les valeurs du DOM au cas où oninput n'aurait pas fire.
+  // (Important pour les textareas longs comme l'ordre du jour, où l'événement input peut
+  // être en retard par rapport au click sur "Modifier" sur certains navigateurs mobiles,
+  // et pour les <select> qui ne déclenchent pas oninput de manière uniforme.)
+  const elDate = document.getElementById('assemblyFormDate');
+  const elStatut = document.getElementById('assemblyFormStatut');
+  const elHeureDebut = document.getElementById('assemblyFormHeureDebut');
+  const elHeureFin = document.getElementById('assemblyFormHeureFin');
+  const elLieu = document.getElementById('assemblyFormLieu');
+  const elOrdreDuJour = document.getElementById('assemblyFormOrdreDuJour');
+  if(elDate) assemblyForm.date = elDate.value;
+  if(elStatut) assemblyForm.statut = elStatut.value;
+  if(elHeureDebut) assemblyForm.heureDebut = elHeureDebut.value;
+  if(elHeureFin) assemblyForm.heureFin = elHeureFin.value;
+  if(elLieu) assemblyForm.lieu = elLieu.value;
+  if(elOrdreDuJour) assemblyForm.ordreDuJour = elOrdreDuJour.value;
+
   if(!assemblyForm.date){ toast('Validation','La date est obligatoire.','error'); return; }
   if(editingAssemblyId){
     const idx = state.assemblies.findIndex(a=>a.id===editingAssemblyId);
-    state.assemblies[idx] = { ...state.assemblies[idx], ...assemblyForm };
-    toast('Assemblée modifiée','L\'assemblée a été mise à jour.');
+    if(idx >= 0){
+      state.assemblies[idx] = { ...state.assemblies[idx], ...assemblyForm };
+      toast('Assemblée modifiée','L\'assemblée a été mise à jour.');
+    } else {
+      toast('Erreur','Assemblée introuvable. Elle a peut-être été supprimée par un autre administrateur. Rechargez la page et réessayez.','error');
+      return;
+    }
   } else {
     state.assemblies.push({ id: uid('a'), ...assemblyForm });
     toast('Assemblée créée','La nouvelle assemblée a été enregistrée.');
